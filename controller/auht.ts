@@ -30,7 +30,7 @@ function sessionUriFromRequest(request: Request) {
       `The session header '${HEADER_MU_SESSION_ID}' was not found in the request headers.`,
     );
   }
-
+  console.log(`Session <${sessionUri}> found in request.`);
   return sessionUri;
 }
 
@@ -39,16 +39,21 @@ async function getAccountForSessionUri(sessionUri: string) {
     return null;
   }
 
-  const sparqlResult = await query(`
+  const sparqlResult = await query(
+    `
     PREFIX session: <http://mu.semte.ch/vocabularies/session/>
-
+    
     SELECT ?account
     WHERE {
       GRAPH ${sparqlEscapeUri(SESSION_GRAPH_URI)} {
-          ${sparqlEscapeUri(sessionUri)} session:account ?account .
+        ${sparqlEscapeUri(sessionUri)} session:account ?account .
       }
     } LIMIT 1
-  `);
+  `,
+    { sudo: true },
+  );
 
-  return sparqlResult.results.bindings?.[0]?.account.value;
+  const accountUri = sparqlResult.results.bindings?.[0]?.account.value;
+  console.log(`Account <${accountUri}> is logged in.`);
+  return accountUri;
 }
