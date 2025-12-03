@@ -13,7 +13,7 @@ processRouter.post('/', async (req: Request, res: Response) => {
 
     return res
       .status(201)
-      .send({ '@id': 'http://data.lblod.info/processes/example' });
+      .send({ '@id': 'http://data.lblod.info/processes/example-1' });
   } catch (error) {
     const errorResponse = HttpError.caughtErrorJsonResponse(error);
     return res.status(errorResponse.status).send(errorResponse);
