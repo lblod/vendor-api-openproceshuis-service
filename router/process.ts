@@ -11,7 +11,9 @@ processRouter.post('/', async (req: Request, res: Response) => {
   try {
     await authenticateBeforeAction(req);
 
-    return res.status(201).send();
+    return res
+      .status(201)
+      .send({ '@id': 'http://data.lblod.info/processes/example' });
   } catch (error) {
     const errorResponse = HttpError.caughtErrorJsonResponse(error);
     return res.status(errorResponse.status).send(errorResponse);
