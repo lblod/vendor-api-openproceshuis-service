@@ -2,8 +2,79 @@ import { Request } from 'express';
 
 import { HttpError } from '../util/http-error';
 import isUrl from '../util/is-url';
+import { CreateProcessRequest } from '../types';
+import { sparqlEscapeUri, query, update, sparqlEscapeString } from 'mu';
 
-export function createPostProcessRequest(request: Request) {
+export async function createNewProcess(
+  process: CreateProcessRequest,
+): Promise<string> {
+  if (await isExistingProcessUri(process['@id'])) {
+    throw new HttpError(
+      'Process with uri already exists.',
+      409,
+      'The given uri for the process already exists in the database.',
+    );
+  }
+  let description = '';
+  let linkedInventoryProcess = '';
+  let users = '';
+  let diagrams = '';
+  let attachments = '';
+
+  if (process.description) {
+    description = `${sparqlEscapeUri(process['@id'])} dct:description ${sparqlEscapeString(process.description)} .`;
+  }
+  if (process.linkedInventoryProcess) {
+    linkedInventoryProcess = `${sparqlEscapeUri(process['@id'])} dct:source ${sparqlEscapeUri(process.linkedInventoryProcess)} .`;
+  }
+  if (process.users) {
+    users = process.users
+      .map(
+        (uri) =>
+          `${sparqlEscapeUri(process['@id'])} prov:usedBy ${sparqlEscapeUri(uri)} .`,
+      )
+      .join('\n');
+  }
+  if (process.diagrams) {
+    diagrams = process.diagrams
+      .map(
+        (uri) =>
+          `${sparqlEscapeUri(process['@id'])} nie:isPartOf ${sparqlEscapeUri(uri)} .`,
+      )
+      .join('\n');
+  }
+  if (process.attachments) {
+    attachments = process.attachments
+      .map(
+        (uri) =>
+          `${sparqlEscapeUri(process['@id'])} nie:isPartOf ${sparqlEscapeUri(uri)} .`,
+      )
+      .join('\n');
+  }
+
+  // TODO - make sure it is added in the correct graph, now its the sessions organization graph
+  await update(`
+    PREFIX dpv: <https://w3id.org/dpv#>
+    PREFIX dct: <http://purl.org/dc/terms/>
+    PREFIX prov: <http://www.w3.org/ns/prov#>
+    PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
+    INSERT DATA {
+      ${sparqlEscapeUri(process['@id'])} a dpv:Process .
+      ${sparqlEscapeUri(process['@id'])} dct:title ${sparqlEscapeString(process.title)} .
+      ${description}
+      ${linkedInventoryProcess}
+      ${users}
+      ${diagrams}
+      ${attachments}
+    }  
+  `);
+
+  return process['@id'];
+}
+
+export function createPostProcessRequest(
+  request: Request,
+): CreateProcessRequest {
   const id = request.body['@id'];
   const {
     title = null,
@@ -93,4 +164,17 @@ export function createPostProcessRequest(request: Request) {
     diagrams,
     attachments,
   };
+}
+
+async function isExistingProcessUri(processUri: string): Promise<boolean> {
+  const sudoResult = await query(
+    `
+    PREFIX dpv: <https://w3id.org/dpv#>
+    ASK {
+      ${sparqlEscapeUri(processUri)} a dpv:Process .
+    }
+    `,
+    { sudo: true },
+  );
+  return Boolean(sudoResult.boolean);
 }
