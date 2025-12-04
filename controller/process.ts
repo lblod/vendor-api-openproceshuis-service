@@ -44,6 +44,13 @@ export function createPostProcessRequest(request: Request) {
       'The "user" property must be an array of administrative unit uris so we can see who is working with this process.',
     );
   }
+  if (Array.isArray(users) && !users.every((uri: string) => isUrl(uri))) {
+    throw new HttpError(
+      'Values of "users" must all be URIs',
+      400,
+      'The "user" property must be an array of administrative unit uris. Example: ["http://data.lblod.info/id/bestuurseenheden/abc"]',
+    );
+  }
   if (typeof diagrams !== 'object' && !Array.isArray(diagrams)) {
     throw new HttpError(
       'Property "diagrams" must be an array',
@@ -51,11 +58,28 @@ export function createPostProcessRequest(request: Request) {
       'The "diagrams" property must be an array of file uris.',
     );
   }
+  if (Array.isArray(diagrams) && !diagrams.every((uri: string) => isUrl(uri))) {
+    throw new HttpError(
+      'Values of "diagrams" must all be URIs',
+      400,
+      'The "diagrams" property must be an array of file uris. Example: ["http://data.lblod.info/files/abc"]',
+    );
+  }
   if (typeof attachments !== 'object' && !Array.isArray(attachments)) {
     throw new HttpError(
       'Property "attachments" must be an array',
       400,
       'The "attachments" property must be an array of file uris.',
+    );
+  }
+  if (
+    Array.isArray(attachments) &&
+    !attachments.every((uri: string) => isUrl(uri))
+  ) {
+    throw new HttpError(
+      'Values of "attachments" must all be URIs',
+      400,
+      'The "attachments" property must be an array of file uris. Example: ["http://data.lblod.info/files/abc"]',
     );
   }
 
