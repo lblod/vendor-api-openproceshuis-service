@@ -8,3 +8,9 @@ export type CreateProcessRequest = {
   diagrams?: Array<string>;
   attachments?: Array<string>;
 };
+
+export type BestuursEenheid = {
+  id: string;
+  uri: string;
+  organizationGraphUri: string;
+};
