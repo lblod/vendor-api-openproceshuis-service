@@ -2,15 +2,20 @@ import Router from 'express-promise-router';
 
 import { Request, Response } from 'express';
 
+import { HttpError } from '../util/http-error';
+import { authenticateBeforeAction } from '../controller/auht';
+
 export const processRouter = Router();
 
 processRouter.post('/', async (req: Request, res: Response) => {
   try {
-    return res.status(201).send();
+    await authenticateBeforeAction(req);
+
+    return res
+      .status(201)
+      .send({ '@id': 'http://data.lblod.info/processes/example-1' });
   } catch (error) {
-    const message =
-      error.message ?? 'An error occurred while creating a new process';
-    const statusCode = error.status ?? 500;
-    return res.status(statusCode).send({ message });
+    const errorResponse = HttpError.caughtErrorJsonResponse(error);
+    return res.status(errorResponse.status).send(errorResponse);
   }
 });
