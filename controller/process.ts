@@ -6,6 +6,7 @@ import {
   BestuursEenheid,
   CreateProcessRequest,
   PatchProcessRequest,
+  PutProcessRequest,
 } from '../types';
 import { sparqlEscapeUri, query, update, sparqlEscapeString } from 'mu';
 
@@ -212,6 +213,7 @@ export function createPatchProcessRequest(
   };
 
   Object.keys(request.body).map((key) => {
+    // TODO - check if the key is in the object
     if (request.body[key]) {
       dataToPatch[key] = request.body[key];
     }
@@ -220,13 +222,63 @@ export function createPatchProcessRequest(
   return dataToPatch;
 }
 
+export async function putProcess(process: PutProcessRequest): Promise<void> {
+  if (!(await isExistingProcessUri(process['@id']))) {
+    throw new HttpError(
+      'Process with uri not found.',
+      404,
+      'The given uri for the process was not found. Does it exist? Do you have rights to update the process?',
+    );
+  }
+
+  console.log({ put: process }); // TODO - implement PUT query
+}
+
+export function createPutProcessRequest(request: Request): PutProcessRequest {
+  const allProcessKeys = [
+    '@id',
+    'title',
+    'description',
+    'contact',
+    'linkedInventoryProcess',
+    'users',
+    'diagrams',
+    'attachments',
+  ];
+  const isContainingAllKeys = Object.keys(request.body).every((key) =>
+    allProcessKeys.includes(key),
+  );
+
+  if (!isContainingAllKeys) {
+    throw new HttpError(
+      'Not all keys are provided or have a value.',
+      400,
+      `Make sure to add all process properties in the body with there value when doing a PUT request. (${allProcessKeys.join(', ')})`,
+    );
+  }
+  validateRequestValues(request, { put: true });
+
+  return {
+    '@id': request.body['@id'],
+    title: request.body['title'],
+    contact: request.body['contact'],
+    description: request.body['description'],
+    linkedInventoryProcess: request.body['linkedInventoryProcess'],
+    users: request.body['users'],
+    diagrams: request.body['diagrams'],
+    attachments: request.body['attachments'],
+  };
+}
+
 function validateRequestValues(
   request: Request,
-  requestType: { post?: boolean; patch?: boolean },
+  requestType: { post?: boolean; patch?: boolean; put?: boolean },
 ) {
   const id = request.body['@id'];
   const {
     title = null,
+    contact = null,
+    description = null,
     linkedInventoryProcess = null,
     users = null,
     diagrams = null,
@@ -247,8 +299,26 @@ function validateRequestValues(
       'When creating a process the "title" property must be in the request body.',
     );
   }
+  if (requestType.put && typeof contact == 'string' && contact.trim() == '') {
+    throw new HttpError(
+      'Property "contact" cannot be empty.',
+      400,
+      'When replacing a process the "contact" property must be in the request body.',
+    );
+  }
   if (
-    requestType.patch &&
+    requestType.put &&
+    typeof description == 'string' &&
+    description.trim() == ''
+  ) {
+    throw new HttpError(
+      'Property "description" cannot be empty.',
+      400,
+      'When replacing a process the "description" property must be in the request body.',
+    );
+  }
+  if (
+    (requestType.patch || requestType.put) &&
     title &&
     typeof title == 'string' &&
     title.trim() == ''

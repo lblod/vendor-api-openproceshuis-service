@@ -8,7 +8,9 @@ import {
   createNewProcess,
   createPatchProcessRequest,
   createPostProcessRequest,
+  createPutProcessRequest,
   patchProcess,
+  putProcess,
 } from '../controller/process';
 
 export const processRouter = Router();
@@ -47,6 +49,27 @@ processRouter.patch('/', async (req: Request, res: Response) => {
 
     const patchRequest = createPatchProcessRequest(req);
     await patchProcess(patchRequest);
+
+    return res.status(200).send();
+  } catch (error) {
+    const errorResponse = HttpError.caughtErrorJsonResponse(error);
+    return res.status(errorResponse.status).send(errorResponse);
+  }
+});
+
+processRouter.put('/', async (req: Request, res: Response) => {
+  try {
+    const { bestuursEenheid } = await authenticateBeforeAction(req);
+    if (!bestuursEenheid) {
+      throw new HttpError(
+        'No bestuurseenheid found for session',
+        400,
+        'The bestuurseenheid must be set so we know where the process will live.',
+      );
+    }
+
+    const putRequest = createPutProcessRequest(req);
+    await putProcess(putRequest);
 
     return res.status(200).send();
   } catch (error) {
