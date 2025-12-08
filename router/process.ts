@@ -46,7 +46,7 @@ processRouter.patch('/', async (req: Request, res: Response) => {
     }
 
     const patchRequest = createPatchProcessRequest(req);
-    await patchProcess(patchRequest, bestuursEenheid);
+    await patchProcess(patchRequest);
 
     return res.status(200).send();
   } catch (error) {

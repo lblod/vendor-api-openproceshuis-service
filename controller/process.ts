@@ -124,9 +124,82 @@ export function createPostProcessRequest(
 
 export async function patchProcess(
   process: PatchProcessRequest,
-  bestuurseenheid: BestuursEenheid,
 ): Promise<void> {
-  console.log('UPDATE:', process);
+  if (!(await isExistingProcessUri(process['@id']))) {
+    throw new HttpError(
+      'Process with uri not found.',
+      404,
+      'The given uri for the process was not found. Does it exist? Do you have rights to update the process?',
+    );
+  }
+  let title = '';
+  let description = '';
+  let linkedInventoryProcess = '';
+  let users = '';
+  let diagrams = '';
+  let attachments = '';
+  const whereQueryValues = [];
+
+  if (process.title) {
+    title = `?process dct:title ${sparqlEscapeString(process.title)} .`;
+    whereQueryValues.push('?process dct:title ?title .');
+  }
+  if (process.description) {
+    description = `?process dct:description ${sparqlEscapeString(process.description)} .`;
+    whereQueryValues.push('?process dct:description ?description .');
+  }
+  if (process.linkedInventoryProcess) {
+    linkedInventoryProcess = `?process dct:source ${sparqlEscapeUri(process.linkedInventoryProcess)} .`;
+    whereQueryValues.push('?process dct:source ?source .');
+  }
+  if (process.users) {
+    users = process.users
+      .map((uri) => `?process prov:usedBy ${sparqlEscapeUri(uri)} .`)
+      .join('\n');
+    whereQueryValues.push('?process prov:usedBy ?users .');
+  }
+  if (process.diagrams) {
+    diagrams = process.diagrams
+      .map((uri) => `?process nie:isPartOf ${sparqlEscapeUri(uri)} .`)
+      .join('\n');
+    whereQueryValues.push('?process nie:isPartOf ?diagrams .');
+  }
+  if (process.attachments) {
+    attachments = process.attachments
+      .map((uri) => `?process nie:isPartOf ${sparqlEscapeUri(uri)} .`)
+      .join('\n');
+    whereQueryValues.push('?process nie:isPartOf ?attachments .');
+  }
+  await update(
+    `
+    PREFIX dpv: <https://w3id.org/dpv#>
+    PREFIX dct: <http://purl.org/dc/terms/>
+    PREFIX prov: <http://www.w3.org/ns/prov#>
+    PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
+    DELETE {
+      ${whereQueryValues.join('\n')}
+    }
+    INSERT {
+      ${title}
+      ${description}
+      ${linkedInventoryProcess}
+      ${users}
+      ${diagrams}
+      ${attachments}
+    }
+    WHERE {
+      GRAPH ?g {
+        VALUES ?process { ${sparqlEscapeUri(process['@id'])} }
+        ?process a dpv:Process .
+        ${whereQueryValues.map((value) => `OPTIONAL { ${value} }`).join('\n')}
+      }
+    }  
+  `,
+    { sudo: false },
+  );
+  console.log(
+    `Updated properties of process ${sparqlEscapeUri(process['@id'])}. (${Object.keys(process).join(', ')}) `,
+  );
 }
 
 export function createPatchProcessRequest(
