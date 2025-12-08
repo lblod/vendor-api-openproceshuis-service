@@ -13,7 +13,9 @@ import {
   idMustBeInRequestBody,
   patchProcess,
   putProcess,
+  removeFileFromProcess,
 } from '../controller/process';
+import isUrl from '../util/is-url';
 
 export const processRouter = Router();
 
@@ -96,6 +98,35 @@ processRouter.delete('/', async (req: Request, res: Response) => {
     }
 
     await archiveProcess(req.body['@id']);
+
+    return res.status(204).send();
+  } catch (error) {
+    const errorResponse = HttpError.caughtErrorJsonResponse(error);
+    return res.status(errorResponse.status).send(errorResponse);
+  }
+});
+
+processRouter.delete('/files', async (req: Request, res: Response) => {
+  try {
+    idMustBeInRequestBody(req);
+    const fileUri = req.body['fileUri'];
+    if (!fileUri || fileUri.trim() == '' || !isUrl(fileUri)) {
+      throw new HttpError(
+        'Property "fileUri" is not set',
+        400,
+        'Property "fileUri" must be set when you want to remove a file from the process.',
+      );
+    }
+    const { bestuursEenheid } = await authenticateBeforeAction(req);
+    if (!bestuursEenheid) {
+      throw new HttpError(
+        'No bestuurseenheid found for session',
+        400,
+        'The bestuurseenheid must be set so we know where the process will live.',
+      );
+    }
+
+    await removeFileFromProcess(req.body['@id'], fileUri);
 
     return res.status(204).send();
   } catch (error) {

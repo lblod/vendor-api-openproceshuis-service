@@ -233,7 +233,6 @@ export function createPatchProcessRequest(
   };
 
   Object.keys(request.body).map((key) => {
-    // TODO - check if the key is in the object
     if (request.body[key]) {
       dataToPatch[key] = request.body[key];
     }
@@ -384,6 +383,44 @@ export async function archiveProcess(processUri: string): Promise<void> {
 
   console.log(
     `Set archived status on  process ${sparqlEscapeUri(processUri)}.`,
+  );
+}
+
+export async function removeFileFromProcess(
+  processUri: string,
+  fileUri: string,
+): Promise<void> {
+  const sparqlResult = await query(
+    `
+    PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
+    ASK {
+      ?process nie:isPartOf ${sparqlEscapeUri(fileUri)} .
+    }  
+  `,
+    { sudo: false },
+  );
+  const fileExistsOnProcess = Boolean(sparqlResult.boolean);
+  if (!fileExistsOnProcess) {
+    throw new HttpError(
+      'Could not find file on process.',
+      400,
+      `The file ${sparqlEscapeUri(fileUri)} was not found on process ${sparqlEscapeUri(processUri)}.`,
+    );
+  }
+
+  await update(
+    `
+    PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
+    PREFIX dpv: <https://w3id.org/dpv#>
+    DELETE {
+      ?process nie:isPartOf ${sparqlEscapeUri(fileUri)} .
+    }
+    WHERE {
+      VALUES ?process { ${sparqlEscapeUri(processUri)} }
+      ?process a dpv:Process .
+    }  
+  `,
+    { sudo: false },
   );
 }
 
