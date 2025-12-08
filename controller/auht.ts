@@ -23,7 +23,7 @@ export async function authenticateBeforeAction(request: Request) {
 
   const bestuursEenheid = await getBestuurseenheidForSession(sessionUri);
 
-  return { bestuursEenheid: bestuursEenheid };
+  return { bestuursEenheid: bestuursEenheid, sessionUri: sessionUri };
 }
 
 function sessionUriFromRequest(request: Request) {
