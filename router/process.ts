@@ -5,10 +5,12 @@ import { Request, Response } from 'express';
 import { HttpError } from '../util/http-error';
 import { authenticateBeforeAction } from '../controller/auht';
 import {
+  archiveProcess,
   createNewProcess,
   createPatchProcessRequest,
   createPostProcessRequest,
   createPutProcessRequest,
+  idMustBeInRequestBody,
   patchProcess,
   putProcess,
 } from '../controller/process';
@@ -17,6 +19,7 @@ export const processRouter = Router();
 
 processRouter.post('/', async (req: Request, res: Response) => {
   try {
+    idMustBeInRequestBody(req);
     const { bestuursEenheid } = await authenticateBeforeAction(req);
     if (!bestuursEenheid) {
       throw new HttpError(
@@ -38,6 +41,7 @@ processRouter.post('/', async (req: Request, res: Response) => {
 
 processRouter.patch('/', async (req: Request, res: Response) => {
   try {
+    idMustBeInRequestBody(req);
     const { bestuursEenheid } = await authenticateBeforeAction(req);
     if (!bestuursEenheid) {
       throw new HttpError(
@@ -59,6 +63,7 @@ processRouter.patch('/', async (req: Request, res: Response) => {
 
 processRouter.put('/', async (req: Request, res: Response) => {
   try {
+    idMustBeInRequestBody(req);
     const { bestuursEenheid } = await authenticateBeforeAction(req);
     if (!bestuursEenheid) {
       throw new HttpError(
@@ -72,6 +77,27 @@ processRouter.put('/', async (req: Request, res: Response) => {
     await putProcess(putRequest);
 
     return res.status(200).send();
+  } catch (error) {
+    const errorResponse = HttpError.caughtErrorJsonResponse(error);
+    return res.status(errorResponse.status).send(errorResponse);
+  }
+});
+
+processRouter.delete('/', async (req: Request, res: Response) => {
+  try {
+    idMustBeInRequestBody(req);
+    const { bestuursEenheid } = await authenticateBeforeAction(req);
+    if (!bestuursEenheid) {
+      throw new HttpError(
+        'No bestuurseenheid found for session',
+        400,
+        'The bestuurseenheid must be set so we know where the process will live.',
+      );
+    }
+
+    await archiveProcess(req.body['@id']);
+
+    return res.status(204).send();
   } catch (error) {
     const errorResponse = HttpError.caughtErrorJsonResponse(error);
     return res.status(errorResponse.status).send(errorResponse);

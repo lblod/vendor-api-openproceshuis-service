@@ -10,6 +10,19 @@ import {
 } from '../types';
 import { sparqlEscapeUri, query, update, sparqlEscapeString } from 'mu';
 
+export function idMustBeInRequestBody(request: Request): void {
+  const id = request.body['@id'];
+  const isAvailable = id && typeof id == 'string' && id.trim() !== '';
+
+  if (!isAvailable) {
+    throw new HttpError(
+      'The process URI must be set in the request body under property "@id"',
+      400,
+      'Without the @id we do not have enough context about the resource.',
+    );
+  }
+}
+
 export async function createNewProcess(
   process: CreateProcessRequest,
   bestuurseenheid: BestuursEenheid,
@@ -238,7 +251,6 @@ export async function putProcess(process: PutProcessRequest): Promise<void> {
     );
   }
 
-  console.log({ put: process });
   const whereQueryValues = [
     '?process dct:title ?title .',
     '?process dct:description ?description .',
@@ -271,7 +283,7 @@ export async function putProcess(process: PutProcessRequest): Promise<void> {
   }
   await update(
     `
-  PREFIX dpv: <https://w3id.org/dpv#>
+    PREFIX dpv: <https://w3id.org/dpv#>
     PREFIX dct: <http://purl.org/dc/terms/>
     PREFIX prov: <http://www.w3.org/ns/prov#>
     PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
@@ -337,6 +349,42 @@ export function createPutProcessRequest(request: Request): PutProcessRequest {
     diagrams: request.body['diagrams'],
     attachments: request.body['attachments'],
   };
+}
+
+export async function archiveProcess(processUri: string): Promise<void> {
+  if (!(await isExistingProcessUri(processUri))) {
+    throw new HttpError(
+      'Process with uri not found.',
+      404,
+      'The given uri for the process was not found. Does it exist? Do you have rights to update the process?',
+    );
+  }
+
+  await update(
+    `
+    PREFIX dpv: <https://w3id.org/dpv#>
+    PREFIX adms: <http://www.w3.org/ns/adms#>
+    DELETE {
+        ?process adms:status ?status .
+    }
+    INSERT {
+        ?process adms:status ${sparqlEscapeUri('http://lblod.data.gift/concepts/concept-status/gearchiveerd')} .
+    }
+    WHERE {
+      VALUES ?process { ${sparqlEscapeUri(processUri)} }
+      ?process a dpv:Process .
+
+      OPTIONAL {
+        ?process adms:status ?status .
+      } 
+    }  
+  `,
+    { sudo: false },
+  );
+
+  console.log(
+    `Set archived status on  process ${sparqlEscapeUri(processUri)}.`,
+  );
 }
 
 function validateRequestValues(
