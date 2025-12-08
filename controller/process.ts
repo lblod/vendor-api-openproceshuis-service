@@ -135,6 +135,7 @@ export async function patchProcess(
   }
   let title = '';
   let description = '';
+  let contact = '';
   let linkedInventoryProcess = '';
   let users = '';
   let diagrams = '';
@@ -148,6 +149,10 @@ export async function patchProcess(
   if (process.description) {
     description = `?process dct:description ${sparqlEscapeString(process.description)} .`;
     whereQueryValues.push('?process dct:description ?description .');
+  }
+  if (process.contact) {
+    contact = `?process schema:email ${sparqlEscapeString(process.contact)} .`;
+    whereQueryValues.push('?process schema:email ?contact .');
   }
   if (process.linkedInventoryProcess) {
     linkedInventoryProcess = `?process dct:source ${sparqlEscapeUri(process.linkedInventoryProcess)} .`;
@@ -177,12 +182,14 @@ export async function patchProcess(
     PREFIX dct: <http://purl.org/dc/terms/>
     PREFIX prov: <http://www.w3.org/ns/prov#>
     PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
+    PREFIX schema: <https://schema.org/>
     DELETE {
       ${whereQueryValues.join('\n')}
     }
     INSERT {
       ${title}
       ${description}
+      ${contact}
       ${linkedInventoryProcess}
       ${users}
       ${diagrams}
@@ -231,7 +238,69 @@ export async function putProcess(process: PutProcessRequest): Promise<void> {
     );
   }
 
-  console.log({ put: process }); // TODO - implement PUT query
+  console.log({ put: process });
+  const whereQueryValues = [
+    '?process dct:title ?title .',
+    '?process dct:description ?description .',
+    '?process schema:email ?contact .',
+    '?process dct:source ?source .',
+    '?process prov:usedBy ?users .',
+    '?process nie:isPartOf ?diagrams .',
+    '?process nie:isPartOf ?attachments .',
+  ];
+  let usersQuery = '';
+  let diagramsQuery = '';
+  let attachmentsQuery = '';
+  if (process.users.length >= 1) {
+    usersQuery = `
+      VALUES ?newUsers { ${process.users.map((userUri) => sparqlEscapeUri(userUri))} }
+      ?process prov:usedBy ?newUsers .
+    `;
+  }
+  if (process.diagrams.length >= 1) {
+    diagramsQuery = `
+      VALUES ?newDiagrams { ${process.diagrams.map((diagramUri) => sparqlEscapeUri(diagramUri))} }
+      ?process nie:isPartOf ?newDiagrams .
+    `;
+  }
+  if (process.attachments.length >= 1) {
+    attachmentsQuery = `
+      VALUES ?newAttachments { ${process.attachments.map((attachmentUri) => sparqlEscapeUri(attachmentUri))} }
+      ?process nie:isPartOf ?newAttachments .
+    `;
+  }
+  await update(
+    `
+  PREFIX dpv: <https://w3id.org/dpv#>
+    PREFIX dct: <http://purl.org/dc/terms/>
+    PREFIX prov: <http://www.w3.org/ns/prov#>
+    PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
+    PREFIX schema: <https://schema.org/>
+    DELETE {
+      ${whereQueryValues.join('\n')}
+    }
+    INSERT {
+      ?process dct:title ${sparqlEscapeString(process.title)} .
+      ?process dct:description ${sparqlEscapeString(process.description)}.
+      ?process schema:email ${sparqlEscapeString(process.contact)}.
+      ?process dct:source ${sparqlEscapeUri(process.linkedInventoryProcess)}.
+      ${usersQuery}
+      ${diagramsQuery}
+      ${attachmentsQuery}
+    }
+    WHERE {
+      GRAPH ?g {
+        VALUES ?process { ${sparqlEscapeUri(process['@id'])} }
+        ?process a dpv:Process .
+        ${whereQueryValues.map((value) => `OPTIONAL { ${value} }`).join('\n')}
+      }
+    }  
+  `,
+    { sudo: false },
+  );
+  console.log(
+    `Replaced properties of process ${sparqlEscapeUri(process['@id'])} with new values. `,
+  );
 }
 
 export function createPutProcessRequest(request: Request): PutProcessRequest {
