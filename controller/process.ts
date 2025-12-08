@@ -99,90 +99,22 @@ export async function createNewProcess(
 export function createPostProcessRequest(
   request: Request,
 ): CreateProcessRequest {
-  const id = request.body['@id'];
+  validateRequestValues(request, { post: true });
   const {
     title = null,
+    description = null,
+    contact = null,
     linkedInventoryProcess = null,
     users = null,
     diagrams = null,
     attachments = null,
   } = request.body;
 
-  if (!id) {
-    throw new HttpError(
-      'Property "@id" is required in the body.',
-      400,
-      'When creating a process the "@id" property must be in the request body.',
-    );
-  }
-  if (!title) {
-    throw new HttpError(
-      'Property "title" is required in the body.',
-      400,
-      'When creating a process the "title" property must be in the request body.',
-    );
-  }
-  if (
-    typeof linkedInventoryProcess == 'string' &&
-    !isUrl(linkedInventoryProcess)
-  ) {
-    throw new HttpError(
-      'Property "linkedInventoryProcess" must be an URI',
-      400,
-      'The "linkedInventoryProcess" property must be the URI of the inventory process subject.',
-    );
-  }
-  if (typeof users !== 'object' && !Array.isArray(users)) {
-    throw new HttpError(
-      'Property "users" must be an array',
-      400,
-      'The "user" property must be an array of administrative unit uris so we can see who is working with this process.',
-    );
-  }
-  if (Array.isArray(users) && !users.every((uri: string) => isUrl(uri))) {
-    throw new HttpError(
-      'Values of "users" must all be URIs',
-      400,
-      'The "user" property must be an array of administrative unit uris. Example: ["http://data.lblod.info/id/bestuurseenheden/abc"]',
-    );
-  }
-  if (typeof diagrams !== 'object' && !Array.isArray(diagrams)) {
-    throw new HttpError(
-      'Property "diagrams" must be an array',
-      400,
-      'The "diagrams" property must be an array of file uris.',
-    );
-  }
-  if (Array.isArray(diagrams) && !diagrams.every((uri: string) => isUrl(uri))) {
-    throw new HttpError(
-      'Values of "diagrams" must all be URIs',
-      400,
-      'The "diagrams" property must be an array of file uris. Example: ["http://data.lblod.info/files/abc"]',
-    );
-  }
-  if (typeof attachments !== 'object' && !Array.isArray(attachments)) {
-    throw new HttpError(
-      'Property "attachments" must be an array',
-      400,
-      'The "attachments" property must be an array of file uris.',
-    );
-  }
-  if (
-    Array.isArray(attachments) &&
-    !attachments.every((uri: string) => isUrl(uri))
-  ) {
-    throw new HttpError(
-      'Values of "attachments" must all be URIs',
-      400,
-      'The "attachments" property must be an array of file uris. Example: ["http://data.lblod.info/files/abc"]',
-    );
-  }
-
   return {
-    '@id': id,
+    '@id': request.body['@id'],
     title: title,
-    description: request.body['description'],
-    contact: request.body['contact'],
+    description: description,
+    contact: contact,
     linkedInventoryProcess: linkedInventoryProcess,
     users,
     diagrams,
@@ -200,6 +132,25 @@ export async function patchProcess(
 export function createPatchProcessRequest(
   request: Request,
 ): PatchProcessRequest {
+  validateRequestValues(request, { patch: true });
+
+  const dataToPatch = {
+    '@id': request.body['@id'],
+  };
+
+  Object.keys(request.body).map((key) => {
+    if (request.body[key]) {
+      dataToPatch[key] = request.body[key];
+    }
+  });
+
+  return dataToPatch;
+}
+
+function validateRequestValues(
+  request: Request,
+  requestType: { post?: boolean; patch?: boolean },
+) {
   const id = request.body['@id'];
   const {
     title = null,
@@ -216,7 +167,19 @@ export function createPatchProcessRequest(
       'When creating a process the "@id" property must be in the request body.',
     );
   }
-  if (title && typeof title == 'string' && title.trim() == '') {
+  if (requestType.post && !title) {
+    throw new HttpError(
+      'Property "title" is required in the body.',
+      400,
+      'When creating a process the "title" property must be in the request body.',
+    );
+  }
+  if (
+    requestType.patch &&
+    title &&
+    typeof title == 'string' &&
+    title.trim() == ''
+  ) {
     throw new HttpError(
       'Property "title" cannot be empty',
       400,
@@ -278,17 +241,6 @@ export function createPatchProcessRequest(
       'The "attachments" property must be an array of file uris. Example: ["http://data.lblod.info/files/abc"]',
     );
   }
-  const dataToPatch = {
-    '@id': id,
-  };
-
-  Object.keys(request.body).map((key) => {
-    if (request.body[key]) {
-      dataToPatch[key] = request.body[key];
-    }
-  });
-
-  return dataToPatch;
 }
 
 async function isExistingProcessUri(processUri: string): Promise<boolean> {
