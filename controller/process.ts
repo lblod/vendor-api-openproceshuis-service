@@ -8,7 +8,8 @@ import {
   PatchProcessRequest,
   PutProcessRequest,
 } from '../types';
-import { sparqlEscapeUri, query, update, sparqlEscapeString, uuid } from 'mu';
+import { sparqlEscapeUri, query, sparqlEscapeString, uuid } from 'mu';
+import { updateQueryWithCatch } from '../util/sparql-with-try-catch';
 
 export function idMustBeInRequestBody(request: Request): void {
   const id = request.body['@id'];
@@ -71,7 +72,7 @@ export async function createNewProcess(
       .join('\n');
   }
 
-  await update(
+  await updateQueryWithCatch(
     `
     PREFIX dpv: <https://w3id.org/dpv#>
     PREFIX dct: <http://purl.org/dc/terms/>
@@ -91,6 +92,7 @@ export async function createNewProcess(
     }  
   `,
     { sudo: false },
+    `Sparql query for creating process ${process['@id']} resource failed.`,
   );
   console.log(
     `Added process ${sparqlEscapeUri(process['@id'])} to bestuurseenheid ${sparqlEscapeUri(bestuurseenheid.uri)}.`,
@@ -192,7 +194,7 @@ export async function patchProcess(
         .join('\n');
     }
   }
-  await update(
+  await updateQueryWithCatch(
     `
     PREFIX dpv: <https://w3id.org/dpv#>
     PREFIX dct: <http://purl.org/dc/terms/>
@@ -220,6 +222,7 @@ export async function patchProcess(
     }  
   `,
     { sudo: false },
+    `Sparql query for updating process ${process['@id']} resource properties failed.`,
   );
   console.log(
     `Updated properties of process ${sparqlEscapeUri(process['@id'])}. (${Object.keys(process).join(', ')}) `,
@@ -283,7 +286,7 @@ export async function putProcess(process: PutProcessRequest): Promise<void> {
     );
     attachmentsQuery = '?newAttachments nie:isPartOf ?process .';
   }
-  await update(
+  await updateQueryWithCatch(
     `
     PREFIX dpv: <https://w3id.org/dpv#>
     PREFIX dct: <http://purl.org/dc/terms/>
@@ -312,6 +315,7 @@ export async function putProcess(process: PutProcessRequest): Promise<void> {
     }  
   `,
     { sudo: false },
+    `Sparql query for replacing process ${process['@id']} resource properties failed.`,
   );
   console.log(
     `Replaced properties of process ${sparqlEscapeUri(process['@id'])} with new values. `,
@@ -363,7 +367,7 @@ export async function archiveProcess(processUri: string): Promise<void> {
     );
   }
 
-  await update(
+  await updateQueryWithCatch(
     `
     PREFIX dpv: <https://w3id.org/dpv#>
     PREFIX adms: <http://www.w3.org/ns/adms#>
@@ -383,6 +387,7 @@ export async function archiveProcess(processUri: string): Promise<void> {
     }  
   `,
     { sudo: false },
+    `Sparql query for archiving process ${processUri} resource failed.`,
   );
 
   console.log(
@@ -412,7 +417,7 @@ export async function removeFileFromProcess(
     );
   }
 
-  await update(
+  await updateQueryWithCatch(
     `
     PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
     PREFIX dpv: <https://w3id.org/dpv#>
@@ -425,6 +430,7 @@ export async function removeFileFromProcess(
     }  
   `,
     { sudo: false },
+    `Sparql query for removing file ${fileUri} from process ${processUri} resource failed.`,
   );
 }
 
