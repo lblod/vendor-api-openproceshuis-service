@@ -142,41 +142,55 @@ export async function patchProcess(
   let users = '';
   let diagrams = '';
   let attachments = '';
-  const whereQueryValues = [];
+  const deleteQueryValues = [];
 
-  if (process.title) {
-    title = `?process dct:title ${sparqlEscapeString(process.title)} .`;
-    whereQueryValues.push('?process dct:title ?title .');
+  if ('title' in process) {
+    deleteQueryValues.push('?process dct:title ?title .');
+    if (process.title && process.title.trim() !== '') {
+      title = `?process dct:title ${sparqlEscapeString(process.title)} .`;
+    }
   }
-  if (process.description) {
-    description = `?process dct:description ${sparqlEscapeString(process.description)} .`;
-    whereQueryValues.push('?process dct:description ?description .');
+  if ('description' in process) {
+    deleteQueryValues.push('?process dct:description ?description .');
+    if (process.description && process.description.trim() !== '') {
+      description = `?process dct:description ${sparqlEscapeString(process.description)} .`;
+    }
   }
-  if (process.contact) {
-    contact = `?process schema:email ${sparqlEscapeString(process.contact)} .`;
-    whereQueryValues.push('?process schema:email ?contact .');
+  if ('contact' in process) {
+    deleteQueryValues.push('?process schema:email ?contact .');
+    if (process.contact) {
+      contact = `?process schema:email ${sparqlEscapeString(process.contact)} .`;
+    }
   }
-  if (process.linkedInventoryProcess) {
-    linkedInventoryProcess = `?process dct:source ${sparqlEscapeUri(process.linkedInventoryProcess)} .`;
-    whereQueryValues.push('?process dct:source ?source .');
+  if ('linkedInventoryProcess' in process) {
+    deleteQueryValues.push('?process dct:source ?source .');
+    if (process.linkedInventoryProcess) {
+      linkedInventoryProcess = `?process dct:source ${sparqlEscapeUri(process.linkedInventoryProcess)} .`;
+    }
   }
-  if (process.users) {
-    users = process.users
-      .map((uri) => `?process prov:usedBy ${sparqlEscapeUri(uri)} .`)
-      .join('\n');
-    whereQueryValues.push('?process prov:usedBy ?users .');
+  if ('users' in process) {
+    deleteQueryValues.push('?process prov:usedBy ?users .');
+    if (process.users.length >= 1) {
+      users = process.users
+        .map((uri) => `?process prov:usedBy ${sparqlEscapeUri(uri)} .`)
+        .join('\n');
+    }
   }
-  if (process.diagrams) {
-    diagrams = process.diagrams
-      .map((uri) => `${sparqlEscapeUri(uri)} nie:isPartOf ?process .`)
-      .join('\n');
-    whereQueryValues.push('?diagrams nie:isPartOf ?process .');
+  if ('diagrams' in process) {
+    deleteQueryValues.push('?diagrams nie:isPartOf ?process .');
+    if (process.diagrams.length >= 1) {
+      diagrams = process.diagrams
+        .map((uri) => `${sparqlEscapeUri(uri)} nie:isPartOf ?process .`)
+        .join('\n');
+    }
   }
-  if (process.attachments) {
-    attachments = process.attachments
-      .map((uri) => `${sparqlEscapeUri(uri)} nie:isPartOf ?process .`)
-      .join('\n');
-    whereQueryValues.push('?attachments nie:isPartOf ?process .');
+  if ('attachments' in process) {
+    deleteQueryValues.push('?attachments nie:isPartOf ?process .');
+    if (process.attachments.length >= 1) {
+      attachments = process.attachments
+        .map((uri) => `${sparqlEscapeUri(uri)} nie:isPartOf ?process .`)
+        .join('\n');
+    }
   }
   await update(
     `
@@ -186,7 +200,7 @@ export async function patchProcess(
     PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
     PREFIX schema: <https://schema.org/>
     DELETE {
-      ${whereQueryValues.join('\n')}
+      ${deleteQueryValues.join('\n')}
     }
     INSERT {
       ${title}
@@ -201,7 +215,7 @@ export async function patchProcess(
       GRAPH ?g {
         VALUES ?process { ${sparqlEscapeUri(process['@id'])} }
         ?process a dpv:Process .
-        ${whereQueryValues.map((value) => `OPTIONAL { ${value} }`).join('\n')}
+        ${deleteQueryValues.map((value) => `OPTIONAL { ${value} }`).join('\n')}
       }
     }  
   `,
@@ -222,9 +236,7 @@ export function createPatchProcessRequest(
   };
 
   Object.keys(request.body).map((key) => {
-    if (request.body[key]) {
-      dataToPatch[key] = request.body[key];
-    }
+    dataToPatch[key] = request.body[key];
   });
 
   return dataToPatch;
@@ -432,7 +444,7 @@ function validateRequestValues(
     throw new HttpError(
       'Property "@id" is required in the body.',
       400,
-      'When creating a process the "@id" property must be in the request body.',
+      'The "@id" property must always be in the request body.',
     );
   }
   if (requestType.post && !title) {
