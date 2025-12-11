@@ -58,7 +58,7 @@ export async function createNewProcess(
     diagrams = process.diagrams
       .map(
         (uri) =>
-          `${sparqlEscapeUri(process['@id'])} nie:isPartOf ${sparqlEscapeUri(uri)} .`,
+          `${sparqlEscapeUri(uri)} nie:isPartOf ${sparqlEscapeUri(process['@id'])} .`,
       )
       .join('\n');
   }
@@ -66,7 +66,7 @@ export async function createNewProcess(
     attachments = process.attachments
       .map(
         (uri) =>
-          `${sparqlEscapeUri(process['@id'])} nie:isPartOf ${sparqlEscapeUri(uri)} .`,
+          `${sparqlEscapeUri(uri)} nie:isPartOf ${sparqlEscapeUri(process['@id'])}.`,
       )
       .join('\n');
   }
@@ -168,15 +168,15 @@ export async function patchProcess(
   }
   if (process.diagrams) {
     diagrams = process.diagrams
-      .map((uri) => `?process nie:isPartOf ${sparqlEscapeUri(uri)} .`)
+      .map((uri) => `${sparqlEscapeUri(uri)} nie:isPartOf ?process .`)
       .join('\n');
-    whereQueryValues.push('?process nie:isPartOf ?diagrams .');
+    whereQueryValues.push('?diagrams nie:isPartOf ?process .');
   }
   if (process.attachments) {
     attachments = process.attachments
-      .map((uri) => `?process nie:isPartOf ${sparqlEscapeUri(uri)} .`)
+      .map((uri) => `${sparqlEscapeUri(uri)} nie:isPartOf ?process .`)
       .join('\n');
-    whereQueryValues.push('?process nie:isPartOf ?attachments .');
+    whereQueryValues.push('?attachments nie:isPartOf ?process .');
   }
   await update(
     `
@@ -245,8 +245,8 @@ export async function putProcess(process: PutProcessRequest): Promise<void> {
     '?process schema:email ?contact .',
     '?process dct:source ?source .',
     '?process prov:usedBy ?users .',
-    '?process nie:isPartOf ?diagrams .',
-    '?process nie:isPartOf ?attachments .',
+    '?diagrams nie:isPartOf ?process .',
+    '?attachments nie:isPartOf ?process .',
   ];
   let usersQuery = '';
   let diagramsQuery = '';
@@ -260,13 +260,13 @@ export async function putProcess(process: PutProcessRequest): Promise<void> {
   if (process.diagrams.length >= 1) {
     diagramsQuery = `
       VALUES ?newDiagrams { ${process.diagrams.map((diagramUri) => sparqlEscapeUri(diagramUri))} }
-      ?process nie:isPartOf ?newDiagrams .
+      ?newDiagrams nie:isPartOf ?process .
     `;
   }
   if (process.attachments.length >= 1) {
     attachmentsQuery = `
       VALUES ?newAttachments { ${process.attachments.map((attachmentUri) => sparqlEscapeUri(attachmentUri))} }
-      ?process nie:isPartOf ?newAttachments .
+      ?newAttachments nie:isPartOf ?process .
     `;
   }
   await update(
@@ -383,7 +383,7 @@ export async function removeFileFromProcess(
     `
     PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
     ASK {
-      ?process nie:isPartOf ${sparqlEscapeUri(fileUri)} .
+      ${sparqlEscapeUri(fileUri)} nie:isPartOf ?process .
     }  
   `,
     { sudo: false },
@@ -402,7 +402,7 @@ export async function removeFileFromProcess(
     PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
     PREFIX dpv: <https://w3id.org/dpv#>
     DELETE {
-      ?process nie:isPartOf ${sparqlEscapeUri(fileUri)} .
+      ${sparqlEscapeUri(fileUri)} nie:isPartOf ?process .
     }
     WHERE {
       VALUES ?process { ${sparqlEscapeUri(processUri)} }
