@@ -251,6 +251,7 @@ export async function putProcess(process: PutProcessRequest): Promise<void> {
     );
   }
 
+  const valuesStatements = [];
   const whereQueryValues = [
     '?process dct:title ?title .',
     '?process dct:description ?description .',
@@ -264,22 +265,23 @@ export async function putProcess(process: PutProcessRequest): Promise<void> {
   let diagramsQuery = '';
   let attachmentsQuery = '';
   if (process.users.length >= 1) {
-    usersQuery = `
-      VALUES ?newUsers { ${process.users.map((userUri) => sparqlEscapeUri(userUri))} }
-      ?process prov:usedBy ?newUsers .
-    `;
+    valuesStatements.push(
+      `VALUES ?newUsers { ${process.users.map((userUri) => sparqlEscapeUri(userUri)).join('\n')} }`,
+    );
+    usersQuery = '?process prov:usedBy ?newUsers .';
   }
   if (process.diagrams.length >= 1) {
-    diagramsQuery = `
-      VALUES ?newDiagrams { ${process.diagrams.map((diagramUri) => sparqlEscapeUri(diagramUri))} }
-      ?newDiagrams nie:isPartOf ?process .
-    `;
+    valuesStatements.push(
+      `VALUES ?newDiagrams { ${process.diagrams.map((diagramUri) => sparqlEscapeUri(diagramUri)).join('\n')} }`,
+    );
+
+    diagramsQuery = '?newDiagrams nie:isPartOf ?process .';
   }
   if (process.attachments.length >= 1) {
-    attachmentsQuery = `
-      VALUES ?newAttachments { ${process.attachments.map((attachmentUri) => sparqlEscapeUri(attachmentUri))} }
-      ?newAttachments nie:isPartOf ?process .
-    `;
+    valuesStatements.push(
+      `VALUES ?newAttachments { ${process.attachments.map((attachmentUri) => sparqlEscapeUri(attachmentUri)).join('\n')} }`,
+    );
+    attachmentsQuery = '?newAttachments nie:isPartOf ?process .';
   }
   await update(
     `
@@ -304,6 +306,7 @@ export async function putProcess(process: PutProcessRequest): Promise<void> {
       GRAPH ?g {
         VALUES ?process { ${sparqlEscapeUri(process['@id'])} }
         ?process a dpv:Process .
+        ${valuesStatements.join('\n')}
         ${whereQueryValues.map((value) => `OPTIONAL { ${value} }`).join('\n')}
       }
     }  
