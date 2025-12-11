@@ -8,7 +8,7 @@ import {
   PatchProcessRequest,
   PutProcessRequest,
 } from '../types';
-import { sparqlEscapeUri, query, update, sparqlEscapeString } from 'mu';
+import { sparqlEscapeUri, query, update, sparqlEscapeString, uuid } from 'mu';
 
 export function idMustBeInRequestBody(request: Request): void {
   const id = request.body['@id'];
@@ -71,16 +71,16 @@ export async function createNewProcess(
       .join('\n');
   }
 
-  // TODO - make sure it is added in the correct graph, now its the sessions organization graph
   await update(
     `
     PREFIX dpv: <https://w3id.org/dpv#>
     PREFIX dct: <http://purl.org/dc/terms/>
     PREFIX prov: <http://www.w3.org/ns/prov#>
     PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
+    PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
     INSERT DATA {
-      GRAPH ${sparqlEscapeUri(bestuurseenheid.organizationGraphUri)} {
         ${sparqlEscapeUri(process['@id'])} a dpv:Process .
+        ${sparqlEscapeUri(process['@id'])} mu:uuid ${sparqlEscapeString(uuid())}.
         ${sparqlEscapeUri(process['@id'])} dct:title ${sparqlEscapeString(process.title)} .
         ${sparqlEscapeUri(process['@id'])} dct:publisher ${sparqlEscapeUri(bestuurseenheid.uri)} .
         ${description}
@@ -88,17 +88,6 @@ export async function createNewProcess(
         ${users}
         ${diagrams}
         ${attachments}
-      }
-      GRAPH <http://mu.semte.ch/graphs/shared> {
-        ${sparqlEscapeUri(process['@id'])} a dpv:Process .
-        ${sparqlEscapeUri(process['@id'])} dct:title ${sparqlEscapeString(process.title)} .
-        ${sparqlEscapeUri(process['@id'])} dct:publisher ${sparqlEscapeUri(bestuurseenheid.uri)} .
-        ${description}
-        ${linkedInventoryProcess}
-        ${users}
-        ${diagrams}
-        ${attachments}
-      }
     }  
   `,
     { sudo: false },
