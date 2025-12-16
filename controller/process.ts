@@ -8,7 +8,13 @@ import {
   PatchProcessRequest,
   PutProcessRequest,
 } from '../types';
-import { sparqlEscapeUri, query, sparqlEscapeString, uuid } from 'mu';
+import {
+  sparqlEscapeUri,
+  query,
+  sparqlEscapeString,
+  uuid,
+  sparqlEscapeDateTime,
+} from 'mu';
 import { updateQueryWithCatch } from '../util/sparql-with-try-catch';
 
 export function idMustBeInRequestBody(request: Request): void {
@@ -84,6 +90,7 @@ export async function createNewProcess(
         ${sparqlEscapeUri(process['@id'])} mu:uuid ${sparqlEscapeString(uuid())}.
         ${sparqlEscapeUri(process['@id'])} dct:title ${sparqlEscapeString(process.title)} .
         ${sparqlEscapeUri(process['@id'])} dct:publisher ${sparqlEscapeUri(bestuurseenheid.uri)} .
+        ${sparqlEscapeUri(process['@id'])} dct:created ${sparqlEscapeDateTime(new Date())} .
         ${description}
         ${linkedInventoryProcess}
         ${users}
