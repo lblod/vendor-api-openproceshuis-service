@@ -44,7 +44,6 @@ export async function createNewProcess(
   let description = '';
   let linkedInventoryProcess = '';
   let users = '';
-  let diagrams = '';
   let attachments = '';
 
   if (process.description) {
@@ -58,14 +57,6 @@ export async function createNewProcess(
       .map(
         (uri) =>
           `${sparqlEscapeUri(process['@id'])} prov:usedBy ${sparqlEscapeUri(uri)} .`,
-      )
-      .join('\n');
-  }
-  if (process.diagrams) {
-    diagrams = process.diagrams
-      .map(
-        (uri) =>
-          `${sparqlEscapeUri(process['@id'])} schema:hasPart ${sparqlEscapeUri(uri)}.`,
       )
       .join('\n');
   }
@@ -88,16 +79,15 @@ export async function createNewProcess(
     PREFIX schema: <https://schema.org/>
 
     INSERT DATA {
-        ${sparqlEscapeUri(process['@id'])} a dpv:Process .
-        ${sparqlEscapeUri(process['@id'])} mu:uuid ${sparqlEscapeString(uuid())}.
-        ${sparqlEscapeUri(process['@id'])} dct:title ${sparqlEscapeString(process.title)} .
-        ${sparqlEscapeUri(process['@id'])} dct:publisher ${sparqlEscapeUri(bestuurseenheid.uri)} .
-        ${sparqlEscapeUri(process['@id'])} dct:created ${sparqlEscapeDateTime(new Date())} .
-        ${description}
-        ${linkedInventoryProcess}
-        ${users}
-        ${diagrams}
-        ${attachments}
+      ${sparqlEscapeUri(process['@id'])} a dpv:Process .
+      ${sparqlEscapeUri(process['@id'])} mu:uuid ${sparqlEscapeString(uuid())}.
+      ${sparqlEscapeUri(process['@id'])} dct:title ${sparqlEscapeString(process.title)} .
+      ${sparqlEscapeUri(process['@id'])} dct:publisher ${sparqlEscapeUri(bestuurseenheid.uri)} .
+      ${sparqlEscapeUri(process['@id'])} dct:created ${sparqlEscapeDateTime(new Date())} .
+      ${description}
+      ${linkedInventoryProcess}
+      ${users}
+      ${attachments}
     }  
   `,
     { sudo: false },
@@ -568,7 +558,9 @@ function validateRequestValues(
   }
 }
 
-async function isExistingProcessUri(processUri: string): Promise<boolean> {
+export async function isExistingProcessUri(
+  processUri: string,
+): Promise<boolean> {
   const sudoResult = await query(
     `
     PREFIX dpv: <https://w3id.org/dpv#>

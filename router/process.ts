@@ -15,6 +15,7 @@ import {
   putProcess,
   removeFileFromProcess,
 } from '../controller/process';
+import { addFilesToNewlyCreatedProcess } from '../controller/itemList';
 import isUrl from '../util/is-url';
 
 export const processRouter = Router();
@@ -33,6 +34,7 @@ processRouter.post('/', async (req: Request, res: Response) => {
 
     const createRequest = createPostProcessRequest(req);
     const processUri = await createNewProcess(createRequest, bestuursEenheid);
+    await addFilesToNewlyCreatedProcess(processUri, createRequest.diagrams);
 
     return res.status(201).send({ '@id': processUri });
   } catch (error) {

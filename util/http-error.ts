@@ -12,7 +12,7 @@ export class HttpError extends Error {
     if (!this.description) {
       this.description = null;
     }
-    console.log('\n Http error: ', this.message);
+    console.log('\n Http error: ', description ?? message);
   }
 
   static caughtErrorJsonResponse(error) {
