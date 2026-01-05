@@ -65,7 +65,7 @@ export async function createNewProcess(
     diagrams = process.diagrams
       .map(
         (uri) =>
-          `${sparqlEscapeUri(uri)} schema:hasPart ${sparqlEscapeUri(process['@id'])} .`,
+          `${sparqlEscapeUri(process['@id'])} schema:hasPart ${sparqlEscapeUri(uri)}.`,
       )
       .join('\n');
   }
@@ -73,7 +73,7 @@ export async function createNewProcess(
     attachments = process.attachments
       .map(
         (uri) =>
-          `${sparqlEscapeUri(uri)} schema:associatedMedia ${sparqlEscapeUri(process['@id'])}.`,
+          `${sparqlEscapeUri(process['@id'])} schema:associatedMedia ${sparqlEscapeUri(uri)}.`,
       )
       .join('\n');
   }
@@ -188,19 +188,19 @@ export async function patchProcess(
     }
   }
   if ('diagrams' in process) {
-    deleteQueryValues.push('?diagrams schema:hasPart ?process .');
+    deleteQueryValues.push('?process schema:hasPart ?diagrams.');
     if (process.diagrams.length >= 1) {
       diagrams = process.diagrams
-        .map((uri) => `${sparqlEscapeUri(uri)} schema:hasPart ?process .`)
+        .map((uri) => `?process schema:hasPart ${sparqlEscapeUri(uri)} .`)
         .join('\n');
     }
   }
   if ('attachments' in process) {
-    deleteQueryValues.push('?attachments schema:associatedMedia ?process .');
+    deleteQueryValues.push('?process schema:associatedMedia ?attachments .');
     if (process.attachments.length >= 1) {
       attachments = process.attachments
         .map(
-          (uri) => `${sparqlEscapeUri(uri)} schema:associatedMedia ?process .`,
+          (uri) => `?process schema:associatedMedia ${sparqlEscapeUri(uri)} .`,
         )
         .join('\n');
     }
@@ -273,8 +273,8 @@ export async function putProcess(process: PutProcessRequest): Promise<void> {
     '?process schema:email ?contact .',
     '?process dct:source ?source .',
     '?process prov:usedBy ?users .',
-    '?diagrams schema:hasPart ?process .',
-    '?attachments schema:associatedMedia ?process .',
+    '?process schema:hasPart ?diagrams .',
+    '?process schema:associatedMedia ?attachments .',
   ];
   let usersQuery = '';
   let diagramsQuery = '';
@@ -290,13 +290,13 @@ export async function putProcess(process: PutProcessRequest): Promise<void> {
       `VALUES ?newDiagrams { ${process.diagrams.map((diagramUri) => sparqlEscapeUri(diagramUri)).join('\n')} }`,
     );
 
-    diagramsQuery = '?newDiagrams schema:hasPart ?process .';
+    diagramsQuery = '?process schema:hasPart ?newDiagrams .';
   }
   if (process.attachments.length >= 1) {
     valuesStatements.push(
       `VALUES ?newAttachments { ${process.attachments.map((attachmentUri) => sparqlEscapeUri(attachmentUri)).join('\n')} }`,
     );
-    attachmentsQuery = '?newAttachments schema:associatedMedia ?process .';
+    attachmentsQuery = '?process schema:associatedMedia ?newAttachments .';
   }
   await updateQueryWithCatch(
     `
@@ -410,7 +410,7 @@ export async function archiveProcess(processUri: string): Promise<void> {
 
 export async function removeFileFromProcess(
   processUri: string,
-  fileUri: string,
+  uri: string,
 ): Promise<void> {
   const sparqlResult = await query(
     `
@@ -418,7 +418,7 @@ export async function removeFileFromProcess(
     PREFIX schema: <https://schema.org/>
 
     ASK {
-      ${sparqlEscapeUri(fileUri)} schema:hasPart|schema:associatedMedia ?process .
+      ?process schema:hasPart|schema:associatedMedia ${sparqlEscapeUri(uri)} .
     }  
   `,
     { sudo: false },
@@ -428,7 +428,7 @@ export async function removeFileFromProcess(
     throw new HttpError(
       'Could not find file on process.',
       400,
-      `The file ${sparqlEscapeUri(fileUri)} was not found on process ${sparqlEscapeUri(processUri)}.`,
+      `The file ${sparqlEscapeUri(uri)} was not found on process ${sparqlEscapeUri(processUri)}.`,
     );
   }
 
@@ -439,16 +439,16 @@ export async function removeFileFromProcess(
     PREFIX schema: <https://schema.org/>
 
     DELETE {
-      ${sparqlEscapeUri(fileUri)} ?p ?process .
+      ?process ?p ${sparqlEscapeUri(uri)} .
     }
     WHERE {
       VALUES ?process { ${sparqlEscapeUri(processUri)} }
       ?process a dpv:Process .
-      ?process ?p ${sparqlEscapeUri(fileUri)} .
+      ?process ?p ${sparqlEscapeUri(uri)} .
     }  
   `,
     { sudo: false },
-    `Sparql query for removing file ${fileUri} from process ${processUri} resource failed.`,
+    `Sparql query for removing file ${uri} from process ${processUri} resource failed.`,
   );
 }
 
