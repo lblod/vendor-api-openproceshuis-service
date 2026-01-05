@@ -65,7 +65,7 @@ export async function createNewProcess(
     diagrams = process.diagrams
       .map(
         (uri) =>
-          `${sparqlEscapeUri(uri)} nie:isPartOf ${sparqlEscapeUri(process['@id'])} .`,
+          `${sparqlEscapeUri(uri)} schema:hasPart ${sparqlEscapeUri(process['@id'])} .`,
       )
       .join('\n');
   }
@@ -73,7 +73,7 @@ export async function createNewProcess(
     attachments = process.attachments
       .map(
         (uri) =>
-          `${sparqlEscapeUri(uri)} nie:isPartOf ${sparqlEscapeUri(process['@id'])}.`,
+          `${sparqlEscapeUri(uri)} schema:associatedMedia ${sparqlEscapeUri(process['@id'])}.`,
       )
       .join('\n');
   }
@@ -85,6 +85,8 @@ export async function createNewProcess(
     PREFIX prov: <http://www.w3.org/ns/prov#>
     PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
+    PREFIX schema: <https://schema.org/>
+
     INSERT DATA {
         ${sparqlEscapeUri(process['@id'])} a dpv:Process .
         ${sparqlEscapeUri(process['@id'])} mu:uuid ${sparqlEscapeString(uuid())}.
@@ -186,18 +188,20 @@ export async function patchProcess(
     }
   }
   if ('diagrams' in process) {
-    deleteQueryValues.push('?diagrams nie:isPartOf ?process .');
+    deleteQueryValues.push('?diagrams schema:hasPart ?process .');
     if (process.diagrams.length >= 1) {
       diagrams = process.diagrams
-        .map((uri) => `${sparqlEscapeUri(uri)} nie:isPartOf ?process .`)
+        .map((uri) => `${sparqlEscapeUri(uri)} schema:hasPart ?process .`)
         .join('\n');
     }
   }
   if ('attachments' in process) {
-    deleteQueryValues.push('?attachments nie:isPartOf ?process .');
+    deleteQueryValues.push('?attachments schema:associatedMedia ?process .');
     if (process.attachments.length >= 1) {
       attachments = process.attachments
-        .map((uri) => `${sparqlEscapeUri(uri)} nie:isPartOf ?process .`)
+        .map(
+          (uri) => `${sparqlEscapeUri(uri)} schema:associatedMedia ?process .`,
+        )
         .join('\n');
     }
   }
@@ -208,6 +212,7 @@ export async function patchProcess(
     PREFIX prov: <http://www.w3.org/ns/prov#>
     PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
     PREFIX schema: <https://schema.org/>
+
     DELETE {
       ${deleteQueryValues.join('\n')}
     }
@@ -268,8 +273,8 @@ export async function putProcess(process: PutProcessRequest): Promise<void> {
     '?process schema:email ?contact .',
     '?process dct:source ?source .',
     '?process prov:usedBy ?users .',
-    '?diagrams nie:isPartOf ?process .',
-    '?attachments nie:isPartOf ?process .',
+    '?diagrams schema:hasPart ?process .',
+    '?attachments schema:associatedMedia ?process .',
   ];
   let usersQuery = '';
   let diagramsQuery = '';
@@ -285,13 +290,13 @@ export async function putProcess(process: PutProcessRequest): Promise<void> {
       `VALUES ?newDiagrams { ${process.diagrams.map((diagramUri) => sparqlEscapeUri(diagramUri)).join('\n')} }`,
     );
 
-    diagramsQuery = '?newDiagrams nie:isPartOf ?process .';
+    diagramsQuery = '?newDiagrams schema:hasPart ?process .';
   }
   if (process.attachments.length >= 1) {
     valuesStatements.push(
       `VALUES ?newAttachments { ${process.attachments.map((attachmentUri) => sparqlEscapeUri(attachmentUri)).join('\n')} }`,
     );
-    attachmentsQuery = '?newAttachments nie:isPartOf ?process .';
+    attachmentsQuery = '?newAttachments schema:associatedMedia ?process .';
   }
   await updateQueryWithCatch(
     `
@@ -300,6 +305,7 @@ export async function putProcess(process: PutProcessRequest): Promise<void> {
     PREFIX prov: <http://www.w3.org/ns/prov#>
     PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
     PREFIX schema: <https://schema.org/>
+
     DELETE {
       ${whereQueryValues.join('\n')}
     }
@@ -409,8 +415,10 @@ export async function removeFileFromProcess(
   const sparqlResult = await query(
     `
     PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
+    PREFIX schema: <https://schema.org/>
+
     ASK {
-      ${sparqlEscapeUri(fileUri)} nie:isPartOf ?process .
+      ${sparqlEscapeUri(fileUri)} schema:hasPart|schema:associatedMedia ?process .
     }  
   `,
     { sudo: false },
@@ -428,12 +436,15 @@ export async function removeFileFromProcess(
     `
     PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
     PREFIX dpv: <https://w3id.org/dpv#>
+    PREFIX schema: <https://schema.org/>
+
     DELETE {
-      ${sparqlEscapeUri(fileUri)} nie:isPartOf ?process .
+      ${sparqlEscapeUri(fileUri)} ?p ?process .
     }
     WHERE {
       VALUES ?process { ${sparqlEscapeUri(processUri)} }
       ?process a dpv:Process .
+      ?process ?p ${sparqlEscapeUri(fileUri)} .
     }  
   `,
     { sudo: false },
