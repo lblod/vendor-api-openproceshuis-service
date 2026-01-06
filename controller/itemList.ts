@@ -37,7 +37,7 @@ async function addNewItemListToProcess(processUri: string): Promise<string> {
   await updateQueryWithCatch(
     `
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
-    PREFIX schema: <https://schema.org/>
+    PREFIX schema: <http://schema.org/>
     PREFIX dct: <http://purl.org/dc/terms/>
     PREFIX dpv: <https://w3id.org/dpv#>
 
@@ -84,7 +84,8 @@ async function addFilesToItemList(
   await updateQueryWithCatch(
     `
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
-    PREFIX schema: <https://schema.org/>
+    PREFIX schema: <http://schema.org/>
+    PREFIX dct: <http://purl.org/dc/terms/>
     PREFIX dpv: <https://w3id.org/dpv#>
 
     INSERT {
