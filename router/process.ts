@@ -15,7 +15,7 @@ import {
   putProcess,
   removeFileFromProcess,
 } from '../controller/process';
-import { addFilesToNewlyCreatedProcess } from '../controller/itemList';
+import { addNewDiagramsToProcess } from '../controller/itemList';
 import isUrl from '../util/is-url';
 
 export const processRouter = Router();
@@ -34,7 +34,7 @@ processRouter.post('/', async (req: Request, res: Response) => {
 
     const createRequest = createPostProcessRequest(req);
     const processUri = await createNewProcess(createRequest, bestuursEenheid);
-    await addFilesToNewlyCreatedProcess(processUri, createRequest.diagrams);
+    await addNewDiagramsToProcess(processUri, createRequest.diagrams);
 
     return res.status(201).send({ '@id': processUri });
   } catch (error) {
@@ -57,6 +57,7 @@ processRouter.patch('/', async (req: Request, res: Response) => {
 
     const patchRequest = createPatchProcessRequest(req);
     await patchProcess(patchRequest);
+    await addNewDiagramsToProcess(patchRequest['@id'], patchRequest.diagrams);
 
     return res.status(200).send();
   } catch (error) {

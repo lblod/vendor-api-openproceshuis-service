@@ -9,11 +9,11 @@ import { isExistingProcessUri } from './process';
 import { updateQueryWithCatch } from '../util/sparql-with-try-catch';
 import { HttpError } from '../util/http-error';
 
-export async function addFilesToNewlyCreatedProcess(
+export async function addNewDiagramsToProcess(
   processUri: string,
-  fileUris: Array<string>,
+  fileUris?: Array<string>,
 ) {
-  if (!fileUris || fileUris.length === 0) {
+  if (!fileUris) {
     console.log(
       `Did not added files to process ${sparqlEscapeUri(processUri)} as no files where passed on.`,
     );
@@ -27,7 +27,9 @@ export async function addFilesToNewlyCreatedProcess(
     );
   }
   const itemListUri = await addNewItemListToProcess(processUri);
-  await addFilesToItemList(itemListUri, fileUris);
+  if (fileUris.length >= 1) {
+    await addFilesToItemList(itemListUri, fileUris);
+  }
 }
 
 async function addNewItemListToProcess(processUri: string): Promise<string> {
