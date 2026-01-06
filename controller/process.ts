@@ -253,24 +253,15 @@ export async function putProcess(process: PutProcessRequest): Promise<void> {
     '?process schema:email ?contact .',
     '?process dct:source ?source .',
     '?process prov:usedBy ?users .',
-    '?process schema:hasPart ?diagrams .',
     '?process schema:associatedMedia ?attachments .',
   ];
   let usersQuery = '';
-  let diagramsQuery = '';
   let attachmentsQuery = '';
   if (process.users.length >= 1) {
     valuesStatements.push(
       `VALUES ?newUsers { ${process.users.map((userUri) => sparqlEscapeUri(userUri)).join('\n')} }`,
     );
     usersQuery = '?process prov:usedBy ?newUsers .';
-  }
-  if (process.diagrams.length >= 1) {
-    valuesStatements.push(
-      `VALUES ?newDiagrams { ${process.diagrams.map((diagramUri) => sparqlEscapeUri(diagramUri)).join('\n')} }`,
-    );
-
-    diagramsQuery = '?process schema:hasPart ?newDiagrams .';
   }
   if (process.attachments.length >= 1) {
     valuesStatements.push(
@@ -295,7 +286,6 @@ export async function putProcess(process: PutProcessRequest): Promise<void> {
       ?process schema:email ${sparqlEscapeString(process.contact)}.
       ?process dct:source ${sparqlEscapeUri(process.linkedInventoryProcess)}.
       ${usersQuery}
-      ${diagramsQuery}
       ${attachmentsQuery}
     }
     WHERE {

@@ -80,6 +80,7 @@ processRouter.put('/', async (req: Request, res: Response) => {
 
     const putRequest = createPutProcessRequest(req);
     await putProcess(putRequest);
+    await addNewDiagramsToProcess(putRequest['@id'], putRequest.diagrams);
 
     return res.status(200).send();
   } catch (error) {
