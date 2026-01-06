@@ -141,7 +141,6 @@ export async function patchProcess(
   let contact = '';
   let linkedInventoryProcess = '';
   let users = '';
-  let diagrams = '';
   let attachments = '';
   const deleteQueryValues = [];
 
@@ -177,14 +176,6 @@ export async function patchProcess(
         .join('\n');
     }
   }
-  if ('diagrams' in process) {
-    deleteQueryValues.push('?process schema:hasPart ?diagrams.');
-    if (process.diagrams.length >= 1) {
-      diagrams = process.diagrams
-        .map((uri) => `?process schema:hasPart ${sparqlEscapeUri(uri)} .`)
-        .join('\n');
-    }
-  }
   if ('attachments' in process) {
     deleteQueryValues.push('?process schema:associatedMedia ?attachments .');
     if (process.attachments.length >= 1) {
@@ -212,7 +203,6 @@ export async function patchProcess(
       ${contact}
       ${linkedInventoryProcess}
       ${users}
-      ${diagrams}
       ${attachments}
     }
     WHERE {
