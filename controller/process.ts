@@ -138,6 +138,7 @@ export function createPostProcessRequest(
 
 export async function patchProcess(
   process: PatchProcessRequest,
+  sessionContributorUri: string,
 ): Promise<void> {
   if (!(await isExistingProcessUri(process['@id']))) {
     throw new HttpError(
@@ -221,6 +222,7 @@ export async function patchProcess(
       ${users}
       ${diagrams}
       ${attachments}
+      ?process dct:contributor ${sparqlEscapeUri(sessionContributorUri)} .
     }
     WHERE {
       GRAPH ?g {
@@ -254,7 +256,10 @@ export function createPatchProcessRequest(
   return dataToPatch;
 }
 
-export async function putProcess(process: PutProcessRequest): Promise<void> {
+export async function putProcess(
+  process: PutProcessRequest,
+  sessionContributorUri: string,
+): Promise<void> {
   if (!(await isExistingProcessUri(process['@id']))) {
     throw new HttpError(
       'Process with uri not found.',
@@ -313,6 +318,7 @@ export async function putProcess(process: PutProcessRequest): Promise<void> {
       ${usersQuery}
       ${diagramsQuery}
       ${attachmentsQuery}
+      ?process dct:contributor ${sparqlEscapeUri(sessionContributorUri)} .
     }
     WHERE {
       GRAPH ?g {
@@ -367,7 +373,10 @@ export function createPutProcessRequest(request: Request): PutProcessRequest {
   };
 }
 
-export async function archiveProcess(processUri: string): Promise<void> {
+export async function archiveProcess(
+  processUri: string,
+  sessionContributorUri: string,
+): Promise<void> {
   if (!(await isExistingProcessUri(processUri))) {
     throw new HttpError(
       'Process with uri not found.',
@@ -380,11 +389,13 @@ export async function archiveProcess(processUri: string): Promise<void> {
     `
     PREFIX dpv: <https://w3id.org/dpv#>
     PREFIX adms: <http://www.w3.org/ns/adms#>
+    PREFIX dct: <http://purl.org/dc/terms/>
     DELETE {
-        ?process adms:status ?status .
+      ?process adms:status ?status .
     }
     INSERT {
-        ?process adms:status ${sparqlEscapeUri('http://lblod.data.gift/concepts/concept-status/gearchiveerd')} .
+      ?process adms:status ${sparqlEscapeUri('http://lblod.data.gift/concepts/concept-status/gearchiveerd')} .
+      ?process dct:contributor ${sparqlEscapeUri(sessionContributorUri)} .
     }
     WHERE {
       VALUES ?process { ${sparqlEscapeUri(processUri)} }

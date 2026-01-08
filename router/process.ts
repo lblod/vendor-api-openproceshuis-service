@@ -24,6 +24,7 @@ processRouter.post('/', async (req: Request, res: Response) => {
   try {
     idMustBeInRequestBody(req);
     const { bestuursEenheid, sessionUri } = await authenticateBeforeAction(req);
+
     const createRequest = createPostProcessRequest(req);
     const sessionContributorUri = await getSessionContributorUri(sessionUri);
     const processUri = await createNewProcess(
@@ -42,17 +43,11 @@ processRouter.post('/', async (req: Request, res: Response) => {
 processRouter.patch('/', async (req: Request, res: Response) => {
   try {
     idMustBeInRequestBody(req);
-    const { bestuursEenheid } = await authenticateBeforeAction(req);
-    if (!bestuursEenheid) {
-      throw new HttpError(
-        'No bestuurseenheid found for session',
-        400,
-        'The bestuurseenheid must be set so we know where the process will live.',
-      );
-    }
+    const { sessionUri } = await authenticateBeforeAction(req);
 
     const patchRequest = createPatchProcessRequest(req);
-    await patchProcess(patchRequest);
+    const sessionContributorUri = await getSessionContributorUri(sessionUri);
+    await patchProcess(patchRequest, sessionContributorUri);
 
     return res.status(200).send();
   } catch (error) {
@@ -64,17 +59,11 @@ processRouter.patch('/', async (req: Request, res: Response) => {
 processRouter.put('/', async (req: Request, res: Response) => {
   try {
     idMustBeInRequestBody(req);
-    const { bestuursEenheid } = await authenticateBeforeAction(req);
-    if (!bestuursEenheid) {
-      throw new HttpError(
-        'No bestuurseenheid found for session',
-        400,
-        'The bestuurseenheid must be set so we know where the process will live.',
-      );
-    }
+    const { sessionUri } = await authenticateBeforeAction(req);
 
     const putRequest = createPutProcessRequest(req);
-    await putProcess(putRequest);
+    const sessionContributorUri = await getSessionContributorUri(sessionUri);
+    await putProcess(putRequest, sessionContributorUri);
 
     return res.status(200).send();
   } catch (error) {
@@ -86,16 +75,10 @@ processRouter.put('/', async (req: Request, res: Response) => {
 processRouter.delete('/', async (req: Request, res: Response) => {
   try {
     idMustBeInRequestBody(req);
-    const { bestuursEenheid } = await authenticateBeforeAction(req);
-    if (!bestuursEenheid) {
-      throw new HttpError(
-        'No bestuurseenheid found for session',
-        400,
-        'The bestuurseenheid must be set so we know where the process will live.',
-      );
-    }
+    const { sessionUri } = await authenticateBeforeAction(req);
 
-    await archiveProcess(req.body['@id']);
+    const sessionContributorUri = await getSessionContributorUri(sessionUri);
+    await archiveProcess(req.body['@id'], sessionContributorUri);
 
     return res.status(204).send();
   } catch (error) {
@@ -115,15 +98,7 @@ processRouter.delete('/files', async (req: Request, res: Response) => {
         'Property "fileUri" must be set when you want to remove a file from the process.',
       );
     }
-    const { bestuursEenheid } = await authenticateBeforeAction(req);
-    if (!bestuursEenheid) {
-      throw new HttpError(
-        'No bestuurseenheid found for session',
-        400,
-        'The bestuurseenheid must be set so we know where the process will live.',
-      );
-    }
-
+    await authenticateBeforeAction(req);
     await removeFileFromProcess(req.body['@id'], fileUri);
 
     return res.status(204).send();
