@@ -26,7 +26,7 @@ export async function authenticateBeforeAction(request: Request) {
   return { bestuursEenheid: bestuursEenheid };
 }
 
-function sessionUriFromRequest(request: Request) {
+export function sessionUriFromRequest(request: Request) {
   const HEADER_MU_SESSION_ID = 'mu-session-id';
   const sessionUri = request.get(HEADER_MU_SESSION_ID);
 
