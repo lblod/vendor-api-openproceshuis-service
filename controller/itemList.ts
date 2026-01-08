@@ -15,13 +15,13 @@ export async function addNewDiagramsToProcess(
 ) {
   if (!fileUris) {
     console.log(
-      `Did not added files to process ${sparqlEscapeUri(processUri)} as no files where passed on.`,
+      `Did not add files to process ${sparqlEscapeUri(processUri)} as no files were passed on.`,
     );
     return;
   }
   if (!(await isExistingProcessUri(processUri))) {
     throw new HttpError(
-      'Process with uri does not exists.',
+      'Process with uri does not exist.',
       204,
       'The given uri for the process does not exist in the database.',
     );
@@ -55,7 +55,7 @@ async function addNewItemListToProcess(processUri: string): Promise<string> {
     }
     `,
     { sudo: false },
-    `Sparql query for adding empty item list to process ${sparqlEscapeUri(processUri)} failed.`,
+    `Sparql query for adding empty itemList to process ${sparqlEscapeUri(processUri)} failed.`,
   );
   console.log(
     `Created new listItem ${sparqlEscapeUri(itemListUri)} for process ${sparqlEscapeUri(processUri)}.`,
@@ -99,7 +99,7 @@ async function addFilesToItemList(
     }
     `,
     { sudo: false },
-    `Sparql query for adding ${fileUris.length} diagrams to item list with uri ${sparqlEscapeUri(itemListUri)} of process failed.`,
+    `Sparql query for adding ${fileUris.length} diagrams to itemList with uri ${sparqlEscapeUri(itemListUri)} of process failed.`,
   );
   console.log(
     `Added ${fileUris.length} files to listItem ${sparqlEscapeUri(itemListUri)}. (${listItems.map((listItem) => sparqlEscapeUri(listItem.uri)).join(', ')})`,
