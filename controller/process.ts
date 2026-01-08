@@ -91,6 +91,7 @@ export async function createNewProcess(
         ${sparqlEscapeUri(process['@id'])} mu:uuid ${sparqlEscapeString(uuid())}.
         ${sparqlEscapeUri(process['@id'])} dct:title ${sparqlEscapeString(process.title)} .
         ${sparqlEscapeUri(process['@id'])} dct:publisher ${sparqlEscapeUri(bestuurseenheid.uri)} .
+        ${sparqlEscapeUri(process['@id'])} dct:creator ${sparqlEscapeUri(sessionContributorUri)} .
         ${sparqlEscapeUri(process['@id'])} dct:contributor ${sparqlEscapeUri(sessionContributorUri)} .
         ${sparqlEscapeUri(process['@id'])} dct:created ${sparqlEscapeDateTime(new Date())} .
         ${description}
