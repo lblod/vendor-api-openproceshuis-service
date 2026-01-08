@@ -75,3 +75,27 @@ export async function impersonateAsBestuurseenheid(
     `Session ${sparqlEscapeUri(sessionUri)}can now impersonate bestuurseenheid ${sparqlEscapeUri(bestuurseenheidUri)}.`,
   );
 }
+
+export async function getSessionContributorUri(sessionUri: string) {
+  const sparqlResult = await query(
+    `
+    PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
+    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+    SELECT ?bestuurseenheid
+    WHERE {
+      GRAPH ${sparqlEscapeUri(SESSION_GRAPH_URI)} {
+        {
+          ${sparqlEscapeUri(sessionUri)} ext:originalSessionGroup ?bestuurseenheid .
+        }
+        UNION
+        {
+          ${sparqlEscapeUri(sessionUri)} ext:sessionGroup ?bestuurseenheid .        
+        }
+      }
+    } LIMIT 1
+    `,
+    { sudo: true },
+  );
+
+  return sparqlResult.results.bindings[0]?.bestuurseenheid?.value;
+}

@@ -16,23 +16,21 @@ import {
   removeFileFromProcess,
 } from '../controller/process';
 import isUrl from '../util/is-url';
+import { getSessionContributorUri } from '../controller/impersonate';
 
 export const processRouter = Router();
 
 processRouter.post('/', async (req: Request, res: Response) => {
   try {
     idMustBeInRequestBody(req);
-    const { bestuursEenheid } = await authenticateBeforeAction(req);
-    if (!bestuursEenheid) {
-      throw new HttpError(
-        'No bestuurseenheid found for session',
-        400,
-        'The bestuurseenheid must be set so we know where the process will live.',
-      );
-    }
-
+    const { bestuursEenheid, sessionUri } = await authenticateBeforeAction(req);
     const createRequest = createPostProcessRequest(req);
-    const processUri = await createNewProcess(createRequest, bestuursEenheid);
+    const sessionContributorUri = await getSessionContributorUri(sessionUri);
+    const processUri = await createNewProcess(
+      createRequest,
+      bestuursEenheid,
+      sessionContributorUri,
+    );
 
     return res.status(201).send({ '@id': processUri });
   } catch (error) {
