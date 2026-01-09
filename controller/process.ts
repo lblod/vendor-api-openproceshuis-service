@@ -33,7 +33,7 @@ export function idMustBeInRequestBody(request: Request): void {
 export async function createNewProcess(
   process: CreateProcessRequest,
   bestuurseenheid: BestuursEenheid,
-  sessionContributorUri: string,
+  vendorUri: string,
 ): Promise<string> {
   if (await isExistingProcessUri(process['@id'])) {
     throw new HttpError(
@@ -91,8 +91,8 @@ export async function createNewProcess(
         ${sparqlEscapeUri(process['@id'])} mu:uuid ${sparqlEscapeString(uuid())}.
         ${sparqlEscapeUri(process['@id'])} dct:title ${sparqlEscapeString(process.title)} .
         ${sparqlEscapeUri(process['@id'])} dct:publisher ${sparqlEscapeUri(bestuurseenheid.uri)} .
-        ${sparqlEscapeUri(process['@id'])} dct:creator ${sparqlEscapeUri(sessionContributorUri)} .
-        ${sparqlEscapeUri(process['@id'])} dct:contributor ${sparqlEscapeUri(sessionContributorUri)} .
+        ${sparqlEscapeUri(process['@id'])} dct:creator ${sparqlEscapeUri(vendorUri)} .
+        ${sparqlEscapeUri(process['@id'])} dct:contributor ${sparqlEscapeUri(vendorUri)} .
         ${sparqlEscapeUri(process['@id'])} dct:created ${sparqlEscapeDateTime(new Date())} .
         ${description}
         ${linkedInventoryProcess}
@@ -139,7 +139,7 @@ export function createPostProcessRequest(
 
 export async function patchProcess(
   process: PatchProcessRequest,
-  sessionContributorUri: string,
+  vendorUri: string,
 ): Promise<void> {
   if (!(await isExistingProcessUri(process['@id']))) {
     throw new HttpError(
@@ -223,7 +223,7 @@ export async function patchProcess(
       ${users}
       ${diagrams}
       ${attachments}
-      ?process dct:contributor ${sparqlEscapeUri(sessionContributorUri)} .
+      ?process dct:contributor ${sparqlEscapeUri(vendorUri)} .
     }
     WHERE {
       GRAPH ?g {
@@ -259,7 +259,7 @@ export function createPatchProcessRequest(
 
 export async function putProcess(
   process: PutProcessRequest,
-  sessionContributorUri: string,
+  vendorUri: string,
 ): Promise<void> {
   if (!(await isExistingProcessUri(process['@id']))) {
     throw new HttpError(
@@ -319,7 +319,7 @@ export async function putProcess(
       ${usersQuery}
       ${diagramsQuery}
       ${attachmentsQuery}
-      ?process dct:contributor ${sparqlEscapeUri(sessionContributorUri)} .
+      ?process dct:contributor ${sparqlEscapeUri(vendorUri)} .
     }
     WHERE {
       GRAPH ?g {
@@ -376,7 +376,7 @@ export function createPutProcessRequest(request: Request): PutProcessRequest {
 
 export async function archiveProcess(
   processUri: string,
-  sessionContributorUri: string,
+  vendorUri: string,
 ): Promise<void> {
   if (!(await isExistingProcessUri(processUri))) {
     throw new HttpError(
@@ -396,7 +396,7 @@ export async function archiveProcess(
     }
     INSERT {
       ?process adms:status ${sparqlEscapeUri('http://lblod.data.gift/concepts/concept-status/gearchiveerd')} .
-      ?process dct:contributor ${sparqlEscapeUri(sessionContributorUri)} .
+      ?process dct:contributor ${sparqlEscapeUri(vendorUri)} .
     }
     WHERE {
       VALUES ?process { ${sparqlEscapeUri(processUri)} }

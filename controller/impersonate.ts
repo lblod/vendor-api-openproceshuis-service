@@ -76,7 +76,7 @@ export async function impersonateAsBestuurseenheid(
   );
 }
 
-export async function getSessionContributorUri(sessionUri: string) {
+export async function getVendorUriFromSession(sessionUri: string) {
   const sparqlResult = await query(
     `
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>

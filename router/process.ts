@@ -16,7 +16,7 @@ import {
   removeFileFromProcess,
 } from '../controller/process';
 import isUrl from '../util/is-url';
-import { getSessionContributorUri } from '../controller/impersonate';
+import { getVendorUriFromSession } from '../controller/impersonate';
 
 export const processRouter = Router();
 
@@ -26,11 +26,11 @@ processRouter.post('/', async (req: Request, res: Response) => {
     const { bestuursEenheid, sessionUri } = await authenticateBeforeAction(req);
 
     const createRequest = createPostProcessRequest(req);
-    const sessionContributorUri = await getSessionContributorUri(sessionUri);
+    const vendorUri = await getVendorUriFromSession(sessionUri);
     const processUri = await createNewProcess(
       createRequest,
       bestuursEenheid,
-      sessionContributorUri,
+      vendorUri,
     );
 
     return res.status(201).send({ '@id': processUri });
@@ -46,8 +46,8 @@ processRouter.patch('/', async (req: Request, res: Response) => {
     const { sessionUri } = await authenticateBeforeAction(req);
 
     const patchRequest = createPatchProcessRequest(req);
-    const sessionContributorUri = await getSessionContributorUri(sessionUri);
-    await patchProcess(patchRequest, sessionContributorUri);
+    const vendorUri = await getVendorUriFromSession(sessionUri);
+    await patchProcess(patchRequest, vendorUri);
 
     return res.status(200).send();
   } catch (error) {
@@ -62,8 +62,8 @@ processRouter.put('/', async (req: Request, res: Response) => {
     const { sessionUri } = await authenticateBeforeAction(req);
 
     const putRequest = createPutProcessRequest(req);
-    const sessionContributorUri = await getSessionContributorUri(sessionUri);
-    await putProcess(putRequest, sessionContributorUri);
+    const vendorUri = await getVendorUriFromSession(sessionUri);
+    await putProcess(putRequest, vendorUri);
 
     return res.status(200).send();
   } catch (error) {
@@ -77,8 +77,8 @@ processRouter.delete('/', async (req: Request, res: Response) => {
     idMustBeInRequestBody(req);
     const { sessionUri } = await authenticateBeforeAction(req);
 
-    const sessionContributorUri = await getSessionContributorUri(sessionUri);
-    await archiveProcess(req.body['@id'], sessionContributorUri);
+    const vendorUri = await getVendorUriFromSession(sessionUri);
+    await archiveProcess(req.body['@id'], vendorUri);
 
     return res.status(204).send();
   } catch (error) {
