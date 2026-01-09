@@ -7,24 +7,14 @@ import {
   impersonateAsBestuurseenheid,
   isValidBestuurseenheid,
 } from '../controller/impersonate';
-import {
-  authenticateBeforeAction,
-  sessionUriFromRequest,
-} from '../controller/auht';
+import { authenticateBeforeAction } from '../controller/auht';
 import { sparqlEscapeUri } from 'mu';
 
 export const impersonateRouter = Router();
 
 impersonateRouter.post('/', async (req: Request, res: Response) => {
   try {
-    const { bestuursEenheid } = await authenticateBeforeAction(req);
-    if (!bestuursEenheid) {
-      throw new HttpError(
-        'No bestuurseenheid found for session',
-        400,
-        'Invalid session, not logged in.',
-      );
-    }
+    const { sessionUri } = await authenticateBeforeAction(req);
     const actOnBehalfOfUri = req.body.bestuurseenheidUri;
     if (!(await isValidBestuurseenheid(actOnBehalfOfUri))) {
       throw new HttpError(
@@ -33,10 +23,7 @@ impersonateRouter.post('/', async (req: Request, res: Response) => {
         `Passed on bestuurseenheidUri is not valid, cannot act on behalf of ${sparqlEscapeUri(actOnBehalfOfUri)}.`,
       );
     }
-    await impersonateAsBestuurseenheid(
-      sessionUriFromRequest(req),
-      actOnBehalfOfUri,
-    );
+    await impersonateAsBestuurseenheid(sessionUri, actOnBehalfOfUri);
 
     return res.status(201).send();
   } catch (error) {
