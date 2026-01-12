@@ -1,0 +1,27 @@
+{
+  "@context": {
+    "adms": "http://www.w3.org/ns/adms#",
+    "dbpedia": "http://dbpedia.org/ontology/",
+    "dct": "http://purl.org/dc/terms/",
+    "nfo": "http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#",
+    "nie": "http://www.semanticdesktop.org/ontologies/2007/01/19/nie#",
+    "@type": "nfo:http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#",
+    "name": "nfo:fileName",
+    "format": "dct:format",
+    "size": "nfo:fileSize",
+    "extension": "dbpedia:fileExtension",
+    "created": "dct:created",
+    "modified": "dct:modified",
+    "status": "adms:status",
+    "download": {
+      "@id": "nie:dataSource",
+      "@type": "@id"
+    },
+    "process": {
+      "@id": "nie:isPartOf",
+      "@type": "@id",
+      "@container": "@set"
+    },
+    "@base": "http://data.lblod.info/files/"
+  }
+}
