@@ -10,6 +10,12 @@ export const pino = pinoHttp({
       };
     },
   },
+  transport: {
+    target: 'pino-pretty',
+    options: {
+      colorize: true,
+    },
+  },
 });
 
 export const log = {
