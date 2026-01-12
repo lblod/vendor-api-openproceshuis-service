@@ -123,8 +123,7 @@ export function createPostProcessRequest(
   const {
     title = null,
     description = null,
-    contact = null,
-    linkedInventoryProcess = null,
+    email = null,
     users = null,
     diagrams = null,
     attachments = null,
@@ -134,8 +133,8 @@ export function createPostProcessRequest(
     '@id': request.body['@id'],
     title: title,
     description: description,
-    contact: contact,
-    linkedInventoryProcess: linkedInventoryProcess,
+    contact: email,
+    linkedInventoryProcess: request.body['linked-concept'] ?? null,
     users,
     diagrams,
     attachments,
@@ -174,16 +173,16 @@ export async function patchProcess(
       description = `?process dct:description ${sparqlEscapeString(process.description)} .`;
     }
   }
-  if ('contact' in process) {
+  if ('email' in process) {
     deleteQueryValues.push('?process schema:email ?contact .');
-    if (process.contact) {
-      contact = `?process schema:email ${sparqlEscapeString(process.contact)} .`;
+    if (process.email) {
+      contact = `?process schema:email ${sparqlEscapeString(process.email)} .`;
     }
   }
-  if ('linkedInventoryProcess' in process) {
+  if ('linked-concept' in process) {
     deleteQueryValues.push('?process dct:source ?source .');
     if (process.linkedInventoryProcess) {
-      linkedInventoryProcess = `?process dct:source ${sparqlEscapeUri(process.linkedInventoryProcess)} .`;
+      linkedInventoryProcess = `?process dct:source ${sparqlEscapeUri(process['linked-concept'])} .`;
     }
   }
   if ('users' in process) {
@@ -354,8 +353,8 @@ export function createPutProcessRequest(request: Request): PutProcessRequest {
     '@id',
     'title',
     'description',
-    'contact',
-    'linkedInventoryProcess',
+    'email',
+    'linked-concept',
     'users',
     'diagrams',
     'attachments',
@@ -376,9 +375,9 @@ export function createPutProcessRequest(request: Request): PutProcessRequest {
   return {
     '@id': request.body['@id'],
     title: request.body['title'],
-    contact: request.body['contact'],
+    contact: request.body['email'],
     description: request.body['description'],
-    linkedInventoryProcess: request.body['linkedInventoryProcess'],
+    linkedInventoryProcess: request.body['linked-concept'],
     users: request.body['users'],
     diagrams: request.body['diagrams'],
     attachments: request.body['attachments'],
@@ -483,11 +482,11 @@ function validateRequestValues(
   requestType: { post?: boolean; patch?: boolean; put?: boolean },
 ) {
   const id = request.body['@id'];
+  const linkedInventoryProcess = request.body['linked-concept'] ?? null;
   const {
     title = null,
-    contact = null,
+    email = null,
     description = null,
-    linkedInventoryProcess = null,
     users = null,
     diagrams = null,
     attachments = null,
@@ -507,11 +506,11 @@ function validateRequestValues(
       'When creating a process the "title" property must be in the request body.',
     );
   }
-  if (requestType.put && typeof contact == 'string' && contact.trim() == '') {
+  if (requestType.put && typeof email == 'string' && email.trim() == '') {
     throw new HttpError(
-      'Property "contact" cannot be empty.',
+      'Property "email" cannot be empty.',
       400,
-      'When replacing a process the "contact" property must be in the request body.',
+      'When replacing a process the "email" property must be in the request body.',
     );
   }
   if (
@@ -542,9 +541,9 @@ function validateRequestValues(
     !isUrl(linkedInventoryProcess)
   ) {
     throw new HttpError(
-      'Property "linkedInventoryProcess" must be an URI',
+      'Property "linked-concept" must be an URI',
       400,
-      'The "linkedInventoryProcess" property must be the URI of the inventory process subject.',
+      'The "linked-concept" property must be the URI of the inventory process subject.',
     );
   }
   if (typeof users !== 'object' && !Array.isArray(users)) {
