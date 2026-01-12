@@ -7,7 +7,7 @@ import {
   impersonateAsBestuurseenheid,
   isValidBestuurseenheid,
 } from '../controller/impersonate';
-import { authenticateBeforeAction } from '../controller/auht';
+import { authenticateBeforeAction } from '../controller/auth';
 import { sparqlEscapeUri } from 'mu';
 
 export const impersonateRouter = Router();

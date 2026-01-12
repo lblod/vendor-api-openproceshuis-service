@@ -1,6 +1,6 @@
 import { sparqlEscapeUri, query } from 'mu';
 import { updateQueryWithCatch } from '../util/sparql-with-try-catch';
-import { SESSION_GRAPH_URI } from './auht';
+import { SESSION_GRAPH_URI } from './auth';
 import { log } from '../util/logger';
 
 export async function isValidBestuurseenheid(bestuurseenheidUri: string) {

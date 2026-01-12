@@ -3,7 +3,7 @@ import Router from 'express-promise-router';
 import { Request, Response } from 'express';
 
 import { HttpError } from '../util/http-error';
-import { authenticateBeforeAction } from '../controller/auht';
+import { authenticateBeforeAction } from '../controller/auth';
 import {
   archiveProcess,
   createNewProcess,
