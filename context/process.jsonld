@@ -78,6 +78,7 @@
       "@id": "rdfs:seeAlso",
       "@type": "@id",
       "@container": "@set"
-    }
+    },
+    "@base": "http://data.lblod.info/processes/"
   }
 }
