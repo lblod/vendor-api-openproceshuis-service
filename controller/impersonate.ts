@@ -1,6 +1,7 @@
 import { sparqlEscapeUri, query } from 'mu';
 import { updateQueryWithCatch } from '../util/sparql-with-try-catch';
 import { SESSION_GRAPH_URI } from './auht';
+import { log } from '../util/logger';
 
 export async function isValidBestuurseenheid(bestuurseenheidUri: string) {
   const sparqlResult = await query(`
@@ -42,11 +43,14 @@ export async function impersonateAsBestuurseenheid(
     }
     `,
     { sudo: true },
-    `Sparql query for removing current impersonation from session ${sparqlEscapeUri(sessionUri)} failed.`,
+    'Sparql query for removing current impersonation from session failed.',
+    {
+      session: sessionUri,
+    },
   );
-  console.log(
-    `Removed current impersonation from session ${sparqlEscapeUri(sessionUri)}.`,
-  );
+  log.info('Removed current impersonation from session', {
+    session: sessionUri,
+  });
   await updateQueryWithCatch(
     `
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
@@ -69,11 +73,16 @@ export async function impersonateAsBestuurseenheid(
     }
     `,
     { sudo: true },
-    `Sparql query for start impersonation ${sparqlEscapeUri(bestuurseenheidUri)} with session ${sparqlEscapeUri(sessionUri)} failed.`,
+    'Sparql query for start impersonation with session failed.',
+    {
+      session: sessionUri,
+      bestuurseenheid: bestuurseenheidUri,
+    },
   );
-  console.log(
-    `Session ${sparqlEscapeUri(sessionUri)}can now impersonate bestuurseenheid ${sparqlEscapeUri(bestuurseenheidUri)}.`,
-  );
+  log.info('Session can now impersonate bestuurseenheid.', {
+    session: sessionUri,
+    bestuurseenheid: bestuurseenheidUri,
+  });
 }
 
 export async function getVendorUriFromSession(sessionUri: string) {

@@ -16,6 +16,7 @@ import {
   sparqlEscapeDateTime,
 } from 'mu';
 import { updateQueryWithCatch } from '../util/sparql-with-try-catch';
+import { log } from '../util/logger';
 
 export function idMustBeInRequestBody(request: Request): void {
   const id = request.body['@id'];
@@ -102,11 +103,15 @@ export async function createNewProcess(
     }  
   `,
     { sudo: false },
-    `Sparql query for creating process ${process['@id']} resource failed.`,
+    'Sparql query for creating process resource failed.',
+    {
+      process: process['@id'],
+    },
   );
-  console.log(
-    `Added process ${sparqlEscapeUri(process['@id'])} to bestuurseenheid ${sparqlEscapeUri(bestuurseenheid.uri)}.`,
-  );
+  log.info('Added process to bestuurseenheid.', {
+    process: process['@id'],
+    bestuurseenheid: bestuurseenheid.uri,
+  });
 
   return process['@id'];
 }
@@ -234,11 +239,14 @@ export async function patchProcess(
     }  
   `,
     { sudo: false },
-    `Sparql query for updating process ${process['@id']} resource properties failed.`,
+    'Sparql query for updating process resource properties failed.',
+    {
+      process: process['@id'],
+    },
   );
-  console.log(
-    `Updated properties of process ${sparqlEscapeUri(process['@id'])}. (${Object.keys(process).join(', ')}) `,
-  );
+  log.info('Updated properties of process', {
+    properties: Object.keys(process),
+  });
 }
 
 export function createPatchProcessRequest(
@@ -331,11 +339,14 @@ export async function putProcess(
     }  
   `,
     { sudo: false },
-    `Sparql query for replacing process ${process['@id']} resource properties failed.`,
+    'Sparql query for replacing process resource properties failed.',
+    {
+      process: process['@id'],
+    },
   );
-  console.log(
-    `Replaced properties of process ${sparqlEscapeUri(process['@id'])} with new values. `,
-  );
+  log.info('Replaced properties of proces with new values.', {
+    process: process['@id'],
+  });
 }
 
 export function createPutProcessRequest(request: Request): PutProcessRequest {
@@ -385,7 +396,8 @@ export async function archiveProcess(
       'The given uri for the process was not found. Does it exist? Do you have rights to update the process?',
     );
   }
-
+  const archivedStatusUri =
+    'http://lblod.data.gift/concepts/concept-status/gearchiveerd';
   await updateQueryWithCatch(
     `
     PREFIX dpv: <https://w3id.org/dpv#>
@@ -395,7 +407,7 @@ export async function archiveProcess(
       ?process adms:status ?status .
     }
     INSERT {
-      ?process adms:status ${sparqlEscapeUri('http://lblod.data.gift/concepts/concept-status/gearchiveerd')} .
+      ?process adms:status ${sparqlEscapeUri(archivedStatusUri)} .
       ?process dct:contributor ${sparqlEscapeUri(vendorUri)} .
     }
     WHERE {
@@ -408,12 +420,15 @@ export async function archiveProcess(
     }  
   `,
     { sudo: false },
-    `Sparql query for archiving process ${processUri} resource failed.`,
+    'Sparql query for archiving process resource failed.',
+    {
+      process: processUri,
+    },
   );
-
-  console.log(
-    `Set archived status on  process ${sparqlEscapeUri(processUri)}.`,
-  );
+  log.info('set archived status on process.', {
+    process: processUri,
+    status: archivedStatusUri,
+  });
 }
 
 export async function removeFileFromProcess(
@@ -451,8 +466,16 @@ export async function removeFileFromProcess(
     }  
   `,
     { sudo: false },
-    `Sparql query for removing file ${fileUri} from process ${processUri} resource failed.`,
+    'Sparql query for removing file from process resource failed.',
+    {
+      process: process['@id'],
+      file: fileUri,
+    },
   );
+  log.info('Removed file from process', {
+    process: processUri,
+    file: fileUri,
+  });
 }
 
 function validateRequestValues(

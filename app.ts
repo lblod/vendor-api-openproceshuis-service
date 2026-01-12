@@ -6,7 +6,9 @@ import bodyParser from 'body-parser';
 import { processRouter } from './router/process';
 import { impersonateRouter } from './router/impersonate';
 import { HttpError } from './util/http-error';
+import { pino } from './util/logger';
 
+app.use(pino);
 app.use(
   bodyParser.json({
     limit: '500mb',
