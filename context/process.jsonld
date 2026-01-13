@@ -1,6 +1,7 @@
 {
   "@context": {
     "@version": 1.1,
+    "@base": "http://data.lblod.info/processes/",
     "adms": "http://www.w3.org/ns/adms#",
     "besluit": "http://data.vlaanderen.be/ns/besluit#",
     "cpsv": "http://purl.org/vocab/cpsv#",
@@ -17,8 +18,8 @@
     "schema": "https://schema.org/",
     "skos": "http://www.w3.org/2004/02/skos/core#",
     "xsd": "http://www.w3.org/2001/XMLSchema#",
-    "@type": "dpv:Process",
-    "@base": "http://data.lblod.info/processes/",
+    "type": "@type",
+    "Process": "dpv:Process",
     "title": {
       "@id": "dct:title",
       "@type": "xsd:string"
@@ -83,7 +84,7 @@
       "@id": "dct:publisher",
       "@type": "@id",
       "@context": {
-        "@type": "besluit:Bestuurseenheid"
+        "Bestuurseenheid": "besluit:Bestuurseenheid"
       }
     },
     "process-statistics": {
@@ -94,30 +95,35 @@
       "@id": "dct:source",
       "@type": "@id",
       "@context": {
-        "@type": "oph:ConceptueelProces"
+        "ConceptueelProces": "oph:ConceptueelProces"
       }
     },
-    "files": {
-      "@id": "nie:hasPart",
-      "@type": "@id",
-      "@container": "@set",
+    "diagrams": {
       "@reverse": "nie:isPartOf",
+      "@container": "@set",
+      "@type": "@id",
       "@context": {
-        "@type": "nfo:FileDataObject"
+        "FileDataObject": "nfo:FileDataObject"
+      }
+    },
+    "attachments": {
+      "@reverse": "nie:isPartOf",
+      "@container": "@set",
+      "@type": "@id",
+      "@context": {
+        "FileDataObject": "nfo:FileDataObject"
       }
     },
     "ipdc-products": {
-      "@id": "cpsv:follows",
-      "@type": "@id",
-      "@container": "@set",
-      "@reverse": "cpsv:follows"
+      "@reverse": "cpsv:follows",
+      "@container": "@set"
     },
     "relevant-administrative-units": {
       "@id": "icr:isRelevantForAdministrativeUnit",
       "@type": "@id",
       "@container": "@set",
       "@context": {
-        "@type": "organisatie:BestuurseenheidClassificatieCode"
+        "BestuurseenheidClassificatieCode": "organisatie:BestuurseenheidClassificatieCode"
       }
     },
     "information-assets": {
@@ -125,7 +131,7 @@
       "@type": "@id",
       "@container": "@set",
       "@context": {
-        "@type": "skos:Concept"
+        "Concept": "skos:Concept"
       }
     },
     "linked-blueprints": {
@@ -133,7 +139,7 @@
       "@type": "@id",
       "@container": "@set",
       "@context": {
-        "@type": "dpv:Process"
+        "Process": "dpv:Process"
       }
     },
     "users": {
@@ -141,7 +147,7 @@
       "@type": "@id",
       "@container": "@set",
       "@context": {
-        "@type": "besluit:Bestuurseenheid"
+        "Bestuurseenheid": "besluit:Bestuurseenheid"
       }
     },
     "links": {
@@ -149,7 +155,7 @@
       "@type": "@id",
       "@container": "@set",
       "@context": {
-        "@type": "nfo:Bookmark"
+        "Bookmark": "nfo:Bookmark"
       }
     }
   }
