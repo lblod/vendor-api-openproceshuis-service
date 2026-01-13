@@ -3,6 +3,7 @@ import { Request } from 'express';
 
 import { HttpError } from '../util/http-error';
 import { BestuursEenheid } from '../types';
+import { getSessionUriFromRequest } from './request';
 
 export const SESSION_GRAPH_URI =
   process.env.SESSION_GRAPH || 'http://mu.semte.ch/graphs/sessions';
@@ -10,7 +11,7 @@ export const ORGANIZATION_GRAPH_BASE_URI =
   'http://mu.semte.ch/graphs/organizations/';
 
 export async function authenticateBeforeAction(request: Request) {
-  const sessionUri = sessionUriFromRequest(request);
+  const sessionUri = getSessionUriFromRequest(request);
   const accountUri = await getAccountForSessionUri(sessionUri);
   if (!accountUri) {
     throw new HttpError(
@@ -30,21 +31,6 @@ export async function authenticateBeforeAction(request: Request) {
   }
 
   return { bestuursEenheid: bestuursEenheid, sessionUri: sessionUri };
-}
-
-export function sessionUriFromRequest(request: Request) {
-  const HEADER_MU_SESSION_ID = 'mu-session-id';
-  const sessionUri = request.get(HEADER_MU_SESSION_ID);
-
-  if (!sessionUri) {
-    throw new HttpError(
-      'Missing session header',
-      400,
-      `The session header '${HEADER_MU_SESSION_ID}' was not found in the request headers.`,
-    );
-  }
-  console.log(`Session <${sessionUri}> found in request.`);
-  return sessionUri;
 }
 
 async function getAccountForSessionUri(sessionUri: string) {

@@ -10,19 +10,19 @@ import {
   createPatchProcessRequest,
   createPostProcessRequest,
   createPutProcessRequest,
-  idMustBeInRequestBody,
   patchProcess,
   putProcess,
   removeFileFromProcess,
 } from '../controller/process';
 import isUrl from '../util/is-url';
 import { getVendorUriFromSession } from '../controller/impersonate';
+import { errorOnResourceUriMissingInRequest } from '../controller/request';
 
 export const processRouter = Router();
 
 processRouter.post('/', async (req: Request, res: Response) => {
   try {
-    idMustBeInRequestBody(req);
+    errorOnResourceUriMissingInRequest(req);
     const { bestuursEenheid, sessionUri } = await authenticateBeforeAction(req);
 
     const createRequest = createPostProcessRequest(req);
@@ -42,7 +42,7 @@ processRouter.post('/', async (req: Request, res: Response) => {
 
 processRouter.patch('/', async (req: Request, res: Response) => {
   try {
-    idMustBeInRequestBody(req);
+    errorOnResourceUriMissingInRequest(req);
     const { sessionUri } = await authenticateBeforeAction(req);
 
     const patchRequest = createPatchProcessRequest(req);
@@ -58,7 +58,7 @@ processRouter.patch('/', async (req: Request, res: Response) => {
 
 processRouter.put('/', async (req: Request, res: Response) => {
   try {
-    idMustBeInRequestBody(req);
+    errorOnResourceUriMissingInRequest(req);
     const { sessionUri } = await authenticateBeforeAction(req);
 
     const putRequest = createPutProcessRequest(req);
@@ -74,7 +74,7 @@ processRouter.put('/', async (req: Request, res: Response) => {
 
 processRouter.delete('/', async (req: Request, res: Response) => {
   try {
-    idMustBeInRequestBody(req);
+    errorOnResourceUriMissingInRequest(req);
     const { sessionUri } = await authenticateBeforeAction(req);
 
     const vendorUri = await getVendorUriFromSession(sessionUri);
@@ -89,7 +89,7 @@ processRouter.delete('/', async (req: Request, res: Response) => {
 
 processRouter.delete('/files', async (req: Request, res: Response) => {
   try {
-    idMustBeInRequestBody(req);
+    errorOnResourceUriMissingInRequest(req);
     const fileUri = req.body['fileUri'];
     if (!fileUri || fileUri.trim() == '' || !isUrl(fileUri)) {
       throw new HttpError(

@@ -18,19 +18,6 @@ import {
 import { updateQueryWithCatch } from '../util/sparql-with-try-catch';
 import { log } from '../util/logger';
 
-export function idMustBeInRequestBody(request: Request): void {
-  const id = request.body['@id'];
-  const isAvailable = id && typeof id == 'string' && id.trim() !== '';
-
-  if (!isAvailable) {
-    throw new HttpError(
-      'The process URI must be set in the request body under property "@id"',
-      400,
-      'Without the @id we do not have enough context about the resource.',
-    );
-  }
-}
-
 export async function createNewProcess(
   process: CreateProcessRequest,
   bestuurseenheid: BestuursEenheid,
