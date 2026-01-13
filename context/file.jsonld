@@ -4,6 +4,7 @@
     "adms": "http://www.w3.org/ns/adms#",
     "dbpedia": "http://dbpedia.org/ontology/",
     "dct": "http://purl.org/dc/terms/",
+    "dpv": "https://w3id.org/dpv#",
     "nfo": "http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#",
     "nie": "http://www.semanticdesktop.org/ontologies/2007/01/19/nie#",
     "xsd": "http://www.w3.org/2001/XMLSchema#",
@@ -39,12 +40,18 @@
     },
     "download": {
       "@id": "nie:dataSource",
-      "@type": "@id"
+      "@type": "@id",
+      "@context": {
+        "@type": "nfo:FileDataObject"
+      }
     },
     "process": {
       "@id": "nie:isPartOf",
       "@type": "@id",
-      "@container": "@set"
+      "@container": "@set",
+      "@context": {
+        "@type": "dpv:Process"
+      }
     }
   }
 }
