@@ -5,12 +5,12 @@ import { log } from '../util/logger';
 import { HttpError } from '../util/http-error';
 import isUrl from '../util/is-url';
 
-export async function validateRequestBodyAgainstContext(
-  requestDataAsLd: any,
+export async function validateRequestBodyAgainstExpandedLd(
+  expandedLd: any,
 ): Promise<void> {
   const resource = {
-    uri: requestDataAsLd['@id'],
-    typeUri: requestDataAsLd['@type'][0],
+    uri: expandedLd['@id'],
+    typeUri: expandedLd['@type'][0],
   };
   const foundTypeForResourceUri = await getResourceTypeUri(resource.uri);
   if (foundTypeForResourceUri && foundTypeForResourceUri !== resource.typeUri) {
@@ -25,11 +25,11 @@ export async function validateRequestBodyAgainstContext(
       },
     );
   }
-  Object.keys(requestDataAsLd).map((key) => {
+  Object.keys(expandedLd).map((key) => {
     if (['@id', '@reverse', '@type'].includes(key)) {
       return;
     }
-    requestDataAsLd[key].map(
+    expandedLd[key].map(
       (prop: { '@id'?: string; '@type'?: string; '@value'?: string }) => {
         const uriObjectValue = prop['@id'];
         if (uriObjectValue && !isUrl(uriObjectValue)) {
@@ -85,7 +85,7 @@ function prepareForExpansion(data: any) {
   return result;
 }
 
-export async function getRequestBodyAsLinkedData(
+export async function getExpandedRequestBody(
   enrichedBody: object,
 ): Promise<object> {
   const context = enrichedBody['@context'];
@@ -109,6 +109,26 @@ export async function getRequestBodyAsLinkedData(
     return mainNode;
   } catch (error) {
     log.debug('Validation Failed.', error);
+  }
+}
+
+export async function getQuadInsertDataFromRequestBody(enrichedBody: any) {
+  const context = enrichedBody['@context'];
+  delete enrichedBody['@context'];
+  try {
+    return await jsonld.toRDF(
+      {
+        ...enrichedBody,
+        '@context': context,
+      },
+      { format: 'application/n-quads' },
+    );
+  } catch (error) {
+    throw new HttpError(
+      'Could not create quads for request body data.',
+      500,
+      'Could not created quads to use in insert data query.',
+    );
   }
 }
 

@@ -8,11 +8,11 @@ import {
   archiveProcess,
   createNewProcess,
   createPatchProcessRequest,
-  createPostProcessRequest,
   createPutProcessRequest,
   patchProcess,
   putProcess,
   removeFileFromProcess,
+  validateRequestValues,
 } from '../controller/process';
 import isUrl from '../util/is-url';
 import { getVendorUriFromSession } from '../controller/impersonate';
@@ -21,8 +21,9 @@ import {
   errorOnResourceUriMissingInRequest,
 } from '../controller/request';
 import {
-  getRequestBodyAsLinkedData,
-  validateRequestBodyAgainstContext,
+  getExpandedRequestBody,
+  getQuadInsertDataFromRequestBody,
+  validateRequestBodyAgainstExpandedLd,
 } from '../controller/context';
 
 export const processRouter = Router();
@@ -31,18 +32,22 @@ processRouter.post('/', async (req: Request, res: Response) => {
   try {
     const { bestuursEenheid, sessionUri } = await authenticateBeforeAction(req);
 
-    errorOnResourceUriMissingInRequest(req);
-    const enrichedRequestBody = await enrichRequestBodyWithContext(req);
-    const requestDataAsLd =
-      await getRequestBodyAsLinkedData(enrichedRequestBody);
-    await validateRequestBodyAgainstContext(requestDataAsLd);
+    const resourceUri = errorOnResourceUriMissingInRequest(req);
+    const expandedLd = await getExpandedRequestBody(
+      enrichRequestBodyWithContext(req),
+    );
+    await validateRequestBodyAgainstExpandedLd(expandedLd);
+    const requestInsertDataTriples = await getQuadInsertDataFromRequestBody(
+      enrichRequestBodyWithContext(req),
+    );
+    validateRequestValues(req, { post: true });
 
-    const createRequest = createPostProcessRequest(req);
     const vendorUri = await getVendorUriFromSession(sessionUri);
     const processUri = await createNewProcess(
-      createRequest,
+      resourceUri,
       bestuursEenheid,
       vendorUri,
+      requestInsertDataTriples,
     );
 
     return res.status(201).send({ '@id': processUri });
@@ -58,9 +63,8 @@ processRouter.patch('/', async (req: Request, res: Response) => {
 
     errorOnResourceUriMissingInRequest(req);
     const enrichedRequestBody = await enrichRequestBodyWithContext(req);
-    const requestDataAsLd =
-      await getRequestBodyAsLinkedData(enrichedRequestBody);
-    await validateRequestBodyAgainstContext(requestDataAsLd);
+    const requestDataAsLd = await getExpandedRequestBody(enrichedRequestBody);
+    await validateRequestBodyAgainstExpandedLd(requestDataAsLd);
 
     const patchRequest = createPatchProcessRequest(req);
     const vendorUri = await getVendorUriFromSession(sessionUri);
@@ -79,9 +83,8 @@ processRouter.put('/', async (req: Request, res: Response) => {
 
     errorOnResourceUriMissingInRequest(req);
     const enrichedRequestBody = await enrichRequestBodyWithContext(req);
-    const requestDataAsLd =
-      await getRequestBodyAsLinkedData(enrichedRequestBody);
-    await validateRequestBodyAgainstContext(requestDataAsLd);
+    const requestDataAsLd = await getExpandedRequestBody(enrichedRequestBody);
+    await validateRequestBodyAgainstExpandedLd(requestDataAsLd);
 
     const putRequest = createPutProcessRequest(req);
     const vendorUri = await getVendorUriFromSession(sessionUri);

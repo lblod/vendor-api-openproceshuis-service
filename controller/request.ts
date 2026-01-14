@@ -21,7 +21,7 @@ export function getSessionUriFromRequest(request: Request): string {
   return sessionUri;
 }
 
-export function errorOnResourceUriMissingInRequest(request: Request): void {
+export function errorOnResourceUriMissingInRequest(request: Request): string {
   const uri = request.body['@id'];
   const isAvailable = uri && typeof uri == 'string' && uri.trim() !== '';
 
@@ -35,6 +35,8 @@ export function errorOnResourceUriMissingInRequest(request: Request): void {
   log.debug('Found resource uri in request', {
     resourceUri: uri,
   });
+
+  return uri;
 }
 
 export function enrichRequestBodyWithContext(request: Request): any {

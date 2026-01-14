@@ -4,7 +4,6 @@ import { HttpError } from '../util/http-error';
 import isUrl from '../util/is-url';
 import {
   BestuursEenheid,
-  CreateProcessRequest,
   PatchProcessRequest,
   PutProcessRequest,
 } from '../types';
@@ -19,113 +18,43 @@ import { updateQueryWithCatch } from '../util/sparql-with-try-catch';
 import { log } from '../util/logger';
 
 export async function createNewProcess(
-  process: CreateProcessRequest,
+  processUri: string,
   bestuurseenheid: BestuursEenheid,
   vendorUri: string,
+  requestInsertDataTriples: string,
 ): Promise<string> {
-  if (await isExistingProcessUri(process['@id'])) {
+  if (await isExistingProcessUri(processUri)) {
     throw new HttpError(
       'Process with uri already exists.',
       409,
       'The given uri for the process already exists in the database.',
     );
   }
-  let description = '';
-  let linkedInventoryProcess = '';
-  let users = '';
-  let diagrams = '';
-  let attachments = '';
-
-  if (process.description) {
-    description = `${sparqlEscapeUri(process['@id'])} dct:description ${sparqlEscapeString(process.description)} .`;
-  }
-  if (process.linkedInventoryProcess) {
-    linkedInventoryProcess = `${sparqlEscapeUri(process['@id'])} dct:source ${sparqlEscapeUri(process.linkedInventoryProcess)} .`;
-  }
-  if (process.users) {
-    users = process.users
-      .map(
-        (uri) =>
-          `${sparqlEscapeUri(process['@id'])} prov:usedBy ${sparqlEscapeUri(uri)} .`,
-      )
-      .join('\n');
-  }
-  if (process.diagrams) {
-    diagrams = process.diagrams
-      .map(
-        (uri) =>
-          `${sparqlEscapeUri(uri)} nie:isPartOf ${sparqlEscapeUri(process['@id'])} .`,
-      )
-      .join('\n');
-  }
-  if (process.attachments) {
-    attachments = process.attachments
-      .map(
-        (uri) =>
-          `${sparqlEscapeUri(uri)} nie:isPartOf ${sparqlEscapeUri(process['@id'])}.`,
-      )
-      .join('\n');
-  }
-
   await updateQueryWithCatch(
     `
-    PREFIX dpv: <https://w3id.org/dpv#>
     PREFIX dct: <http://purl.org/dc/terms/>
-    PREFIX prov: <http://www.w3.org/ns/prov#>
-    PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
     INSERT DATA {
-        ${sparqlEscapeUri(process['@id'])} a dpv:Process .
-        ${sparqlEscapeUri(process['@id'])} mu:uuid ${sparqlEscapeString(uuid())}.
-        ${sparqlEscapeUri(process['@id'])} dct:title ${sparqlEscapeString(process.title)} .
-        ${sparqlEscapeUri(process['@id'])} dct:publisher ${sparqlEscapeUri(bestuurseenheid.uri)} .
-        ${sparqlEscapeUri(process['@id'])} dct:creator ${sparqlEscapeUri(vendorUri)} .
-        ${sparqlEscapeUri(process['@id'])} dct:contributor ${sparqlEscapeUri(vendorUri)} .
-        ${sparqlEscapeUri(process['@id'])} dct:created ${sparqlEscapeDateTime(new Date())} .
-        ${description}
-        ${linkedInventoryProcess}
-        ${users}
-        ${diagrams}
-        ${attachments}
+      ${requestInsertDataTriples}
+      ${sparqlEscapeUri(processUri)} mu:uuid ${sparqlEscapeString(uuid())}.
+      ${sparqlEscapeUri(processUri)} dct:publisher ${sparqlEscapeUri(bestuurseenheid.uri)} .
+      ${sparqlEscapeUri(processUri)} dct:creator ${sparqlEscapeUri(vendorUri)} .
+      ${sparqlEscapeUri(processUri)} dct:contributor ${sparqlEscapeUri(vendorUri)} .
+      ${sparqlEscapeUri(processUri)} dct:created ${sparqlEscapeDateTime(new Date())} .
     }  
   `,
     { sudo: false },
     'Sparql query for creating process resource failed.',
     {
-      process: process['@id'],
+      process: processUri,
     },
   );
   log.info('Added process to bestuurseenheid.', {
-    process: process['@id'],
+    process: processUri,
     bestuurseenheid: bestuurseenheid.uri,
   });
 
-  return process['@id'];
-}
-
-export function createPostProcessRequest(
-  request: Request,
-): CreateProcessRequest {
-  validateRequestValues(request, { post: true });
-  const {
-    title = null,
-    description = null,
-    email = null,
-    users = null,
-    diagrams = null,
-    attachments = null,
-  } = request.body;
-
-  return {
-    '@id': request.body['@id'],
-    title: title,
-    description: description,
-    contact: email,
-    linkedInventoryProcess: request.body['linked-concept'] ?? null,
-    users,
-    diagrams,
-    attachments,
-  };
+  return processUri;
 }
 
 export async function patchProcess(
@@ -464,7 +393,7 @@ export async function removeFileFromProcess(
   });
 }
 
-function validateRequestValues(
+export function validateRequestValues(
   request: Request,
   requestType: { post?: boolean; patch?: boolean; put?: boolean },
 ) {
