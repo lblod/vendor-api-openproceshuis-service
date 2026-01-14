@@ -33,42 +33,48 @@ export async function validateRequestBodyAgainstContext(
     if (['@id', '@reverse', '@type'].includes(key)) {
       return;
     }
-    const uriObjectValue = ldMainNode[key][0]['@id'];
-    if (uriObjectValue && !isUrl(uriObjectValue)) {
-      throw new HttpError(
-        'Predicate value is not a uri.',
-        400,
-        'Provided value for predicate must be an uri.',
-        {
-          predicate: key,
-          object: uriObjectValue,
-        },
-      );
-    }
-    const objectValue = ldMainNode[key][0]['@value'];
-    const objectValueType = ldMainNode[key][0]['@type'];
-    if (objectValue && objectValueType) {
-      const typeCheck = {
-        'http://www.w3.org/2001/XMLSchema#string': () =>
-          typeof objectValue === 'string',
-        'http://www.w3.org/2001/XMLSchema#integer': () =>
-          Boolean(parseInt(objectValue)),
-        'http://www.w3.org/2001/XMLSchema#boolean': () =>
-          Boolean(['true', 'false'].includes(`${objectValue}`.toLowerCase())),
-      };
-      if (!typeCheck[objectValueType]()) {
-        throw new HttpError(
-          'Predicate value is not of type',
-          400,
-          'Provided value for predicate does not match expected type.',
-          {
-            predicate: key,
-            object: objectValue,
-            datatype: objectValueType,
-          },
-        );
-      }
-    }
+    ldMainNode[key].map(
+      (prop: { '@id'?: string; '@type'?: string; '@value'?: string }) => {
+        const uriObjectValue = prop['@id'];
+        if (uriObjectValue && !isUrl(uriObjectValue)) {
+          throw new HttpError(
+            'Predicate value is not a uri.',
+            400,
+            'Provided value for predicate must be an uri.',
+            {
+              predicate: key,
+              object: uriObjectValue,
+            },
+          );
+        }
+        const objectValue = prop['@value'];
+        const objectValueType = prop['@type'];
+        if (objectValue && objectValueType) {
+          const typeCheck = {
+            'http://www.w3.org/2001/XMLSchema#string': () =>
+              typeof objectValue === 'string',
+            'http://www.w3.org/2001/XMLSchema#integer': () =>
+              Boolean(parseInt(objectValue)),
+            'http://www.w3.org/2001/XMLSchema#boolean': () =>
+              Boolean(
+                ['true', 'false'].includes(`${objectValue}`.toLowerCase()),
+              ),
+          };
+          if (!typeCheck[objectValueType]()) {
+            throw new HttpError(
+              'Predicate value is not of type',
+              400,
+              'Provided value for predicate does not match expected type.',
+              {
+                predicate: key,
+                object: objectValue,
+                datatype: objectValueType,
+              },
+            );
+          }
+        }
+      },
+    );
   });
 }
 
