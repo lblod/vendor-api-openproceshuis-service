@@ -346,9 +346,9 @@ export function createPutProcessRequest(request: Request): PutProcessRequest {
     'diagrams',
     'attachments',
   ];
-  const isContainingAllKeys = Object.keys(request.body).every((key) =>
-    allProcessKeys.includes(key),
-  );
+  const isContainingAllKeys = Object.keys(request.body)
+    .filter((key) => ['@context'].includes(key))
+    .every((key) => allProcessKeys.includes(key));
 
   if (!isContainingAllKeys) {
     throw new HttpError(

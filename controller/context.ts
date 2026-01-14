@@ -1,49 +1,17 @@
 import jsonld from 'jsonld';
 import { sparqlEscapeUri, query } from 'mu';
+import { Request } from 'express';
 
 import { log } from '../util/logger';
 import { HttpError } from '../util/http-error';
 import isUrl from '../util/is-url';
+import { enrichRequestBodyWithContext } from './request';
 
-function prepareForExpansion(data: any) {
-  const result = { ...data };
-  Object.keys(result).forEach((key) => {
-    const value = result[key];
-    if (value === null || (Array.isArray(value) && value.length === 0)) {
-      delete result[key];
-    }
-  });
-  return result;
-}
-
-export async function requestBodyToLd(enrichedBody: object): Promise<object> {
-  const context = enrichedBody['@context'];
-  delete enrichedBody['@context'];
-  const cleanData = prepareForExpansion(enrichedBody);
-  try {
-    const expanded = await jsonld.expand({
-      ...cleanData,
-      '@context': context,
-    });
-
-    if (expanded.length === 0) {
-      throw new Error('Invalid JSON-LD: Expansion resulted in an empty graph.');
-    }
-
-    const mainNode = expanded[0];
-    log.debug(
-      'Validation passed: Node with linked data for given request body.',
-      mainNode,
-    );
-    return mainNode;
-  } catch (error) {
-    log.debug('Validation Failed.', error);
-  }
-}
-
-export async function validateLdOfRequestBodyMatchingTheDatatypes(
-  ldMainNode: unknown,
+export async function validateRequestBodyAgainstContext(
+  req: Request,
 ): Promise<void> {
+  const enrichedBody = enrichRequestBodyWithContext(req);
+  const ldMainNode = await requestBodyToLd(enrichedBody);
   const resource = {
     uri: ldMainNode['@id'],
     typeUri: ldMainNode['@type'][0],
@@ -102,6 +70,42 @@ export async function validateLdOfRequestBodyMatchingTheDatatypes(
       }
     }
   });
+}
+
+function prepareForExpansion(data: any) {
+  const result = { ...data };
+  Object.keys(result).forEach((key) => {
+    const value = result[key];
+    if (value === null || (Array.isArray(value) && value.length === 0)) {
+      delete result[key];
+    }
+  });
+  return result;
+}
+
+async function requestBodyToLd(enrichedBody: object): Promise<object> {
+  const context = enrichedBody['@context'];
+  delete enrichedBody['@context'];
+  const cleanData = prepareForExpansion(enrichedBody);
+  try {
+    const expanded = await jsonld.expand({
+      ...cleanData,
+      '@context': context,
+    });
+
+    if (expanded.length === 0) {
+      throw new Error('Invalid JSON-LD: Expansion resulted in an empty graph.');
+    }
+
+    const mainNode = expanded[0];
+    log.debug(
+      'Validation passed: Node with linked data for given request body.',
+      mainNode,
+    );
+    return mainNode;
+  } catch (error) {
+    log.debug('Validation Failed.', error);
+  }
 }
 
 async function getResourceTypeUri(

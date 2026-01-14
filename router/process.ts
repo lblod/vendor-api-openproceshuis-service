@@ -16,24 +16,16 @@ import {
 } from '../controller/process';
 import isUrl from '../util/is-url';
 import { getVendorUriFromSession } from '../controller/impersonate';
-import {
-  enrichRequestBodyWithContext,
-  errorOnResourceUriMissingInRequest,
-} from '../controller/request';
-import {
-  requestBodyToLd,
-  validateLdOfRequestBodyMatchingTheDatatypes,
-} from '../controller/context';
+import { errorOnResourceUriMissingInRequest } from '../controller/request';
+import { validateRequestBodyAgainstContext } from '../controller/context';
 
 export const processRouter = Router();
 
 processRouter.post('/', async (req: Request, res: Response) => {
   try {
-    errorOnResourceUriMissingInRequest(req);
     const { bestuursEenheid, sessionUri } = await authenticateBeforeAction(req);
-    const enrichedBody = enrichRequestBodyWithContext(req);
-    const ldMainNode = await requestBodyToLd(enrichedBody);
-    await validateLdOfRequestBodyMatchingTheDatatypes(ldMainNode);
+    errorOnResourceUriMissingInRequest(req);
+    await validateRequestBodyAgainstContext(req);
     const createRequest = createPostProcessRequest(req);
     const vendorUri = await getVendorUriFromSession(sessionUri);
     const processUri = await createNewProcess(
@@ -52,6 +44,7 @@ processRouter.post('/', async (req: Request, res: Response) => {
 processRouter.patch('/', async (req: Request, res: Response) => {
   try {
     errorOnResourceUriMissingInRequest(req);
+    await validateRequestBodyAgainstContext(req);
     const { sessionUri } = await authenticateBeforeAction(req);
 
     const patchRequest = createPatchProcessRequest(req);
@@ -68,6 +61,7 @@ processRouter.patch('/', async (req: Request, res: Response) => {
 processRouter.put('/', async (req: Request, res: Response) => {
   try {
     errorOnResourceUriMissingInRequest(req);
+    await validateRequestBodyAgainstContext(req);
     const { sessionUri } = await authenticateBeforeAction(req);
 
     const putRequest = createPutProcessRequest(req);
