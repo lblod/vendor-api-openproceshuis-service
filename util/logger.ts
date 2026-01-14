@@ -19,7 +19,10 @@ export const pino = pinoHttp({
 });
 
 export const log = {
-  info: (msg: string, details?: object) => pino.logger.info({ details: { ...details } }, `${msg}`),
-  debug: (msg: string, details?: object) => pino.logger.debug({ details: { ...details } }, `${msg}`),
-  error: (msg: string, details?: object) => pino.logger.error({ details: { ...details } }, `${msg}`),
+  info: (msg: string, details?: object) =>
+    pino.logger.info({ details: { ...details } }, `${msg}`),
+  debug: (msg: string, details?: object) =>
+    pino.logger.debug({ details: { ...details } }, `${msg}`),
+  error: (msg: string, details?: object) =>
+    pino.logger.error({ details: { ...details } }, `${msg}`),
 };

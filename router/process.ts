@@ -16,7 +16,14 @@ import {
 } from '../controller/process';
 import isUrl from '../util/is-url';
 import { getVendorUriFromSession } from '../controller/impersonate';
-import { errorOnResourceUriMissingInRequest } from '../controller/request';
+import {
+  enrichRequestBodyWithContext,
+  errorOnResourceUriMissingInRequest,
+} from '../controller/request';
+import {
+  requestBodyToLd,
+  validateLdOfRequestBodyMatchingTheDatatypes,
+} from '../controller/context';
 
 export const processRouter = Router();
 
@@ -24,7 +31,9 @@ processRouter.post('/', async (req: Request, res: Response) => {
   try {
     errorOnResourceUriMissingInRequest(req);
     const { bestuursEenheid, sessionUri } = await authenticateBeforeAction(req);
-
+    const enrichedBody = enrichRequestBodyWithContext(req);
+    const ldMainNode = await requestBodyToLd(enrichedBody);
+    await validateLdOfRequestBodyMatchingTheDatatypes(ldMainNode);
     const createRequest = createPostProcessRequest(req);
     const vendorUri = await getVendorUriFromSession(sessionUri);
     const processUri = await createNewProcess(

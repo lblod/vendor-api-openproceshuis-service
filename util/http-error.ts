@@ -23,10 +23,12 @@ export class HttpError extends Error {
 
   static caughtErrorJsonResponse(error) {
     const title = error.message ?? 'An unexpected error occurred.';
+    const detail = error.object;
     return {
       status: error.status ?? 500,
       title,
-      detail: error.description,
+      description: error.description,
+      detail,
     };
   }
 }
