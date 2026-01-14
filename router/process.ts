@@ -16,16 +16,27 @@ import {
 } from '../controller/process';
 import isUrl from '../util/is-url';
 import { getVendorUriFromSession } from '../controller/impersonate';
-import { errorOnResourceUriMissingInRequest } from '../controller/request';
-import { validateRequestBodyAgainstContext } from '../controller/context';
+import {
+  enrichRequestBodyWithContext,
+  errorOnResourceUriMissingInRequest,
+} from '../controller/request';
+import {
+  getRequestBodyAsLinkedData,
+  validateRequestBodyAgainstContext,
+} from '../controller/context';
 
 export const processRouter = Router();
 
 processRouter.post('/', async (req: Request, res: Response) => {
   try {
     const { bestuursEenheid, sessionUri } = await authenticateBeforeAction(req);
+
     errorOnResourceUriMissingInRequest(req);
-    await validateRequestBodyAgainstContext(req);
+    const enrichedRequestBody = await enrichRequestBodyWithContext(req);
+    const requestDataAsLd =
+      await getRequestBodyAsLinkedData(enrichedRequestBody);
+    await validateRequestBodyAgainstContext(requestDataAsLd);
+
     const createRequest = createPostProcessRequest(req);
     const vendorUri = await getVendorUriFromSession(sessionUri);
     const processUri = await createNewProcess(
@@ -43,9 +54,13 @@ processRouter.post('/', async (req: Request, res: Response) => {
 
 processRouter.patch('/', async (req: Request, res: Response) => {
   try {
-    errorOnResourceUriMissingInRequest(req);
-    await validateRequestBodyAgainstContext(req);
     const { sessionUri } = await authenticateBeforeAction(req);
+
+    errorOnResourceUriMissingInRequest(req);
+    const enrichedRequestBody = await enrichRequestBodyWithContext(req);
+    const requestDataAsLd =
+      await getRequestBodyAsLinkedData(enrichedRequestBody);
+    await validateRequestBodyAgainstContext(requestDataAsLd);
 
     const patchRequest = createPatchProcessRequest(req);
     const vendorUri = await getVendorUriFromSession(sessionUri);
@@ -60,9 +75,13 @@ processRouter.patch('/', async (req: Request, res: Response) => {
 
 processRouter.put('/', async (req: Request, res: Response) => {
   try {
-    errorOnResourceUriMissingInRequest(req);
-    await validateRequestBodyAgainstContext(req);
     const { sessionUri } = await authenticateBeforeAction(req);
+
+    errorOnResourceUriMissingInRequest(req);
+    const enrichedRequestBody = await enrichRequestBodyWithContext(req);
+    const requestDataAsLd =
+      await getRequestBodyAsLinkedData(enrichedRequestBody);
+    await validateRequestBodyAgainstContext(requestDataAsLd);
 
     const putRequest = createPutProcessRequest(req);
     const vendorUri = await getVendorUriFromSession(sessionUri);
@@ -77,8 +96,8 @@ processRouter.put('/', async (req: Request, res: Response) => {
 
 processRouter.delete('/', async (req: Request, res: Response) => {
   try {
-    errorOnResourceUriMissingInRequest(req);
     const { sessionUri } = await authenticateBeforeAction(req);
+    errorOnResourceUriMissingInRequest(req);
 
     const vendorUri = await getVendorUriFromSession(sessionUri);
     await archiveProcess(req.body['@id'], vendorUri);
@@ -92,6 +111,8 @@ processRouter.delete('/', async (req: Request, res: Response) => {
 
 processRouter.delete('/files', async (req: Request, res: Response) => {
   try {
+    await authenticateBeforeAction(req);
+
     errorOnResourceUriMissingInRequest(req);
     const fileUri = req.body['fileUri'];
     if (!fileUri || fileUri.trim() == '' || !isUrl(fileUri)) {
@@ -101,7 +122,6 @@ processRouter.delete('/files', async (req: Request, res: Response) => {
         'Property "fileUri" must be set when you want to remove a file from the process.',
       );
     }
-    await authenticateBeforeAction(req);
     await removeFileFromProcess(req.body['@id'], fileUri);
 
     return res.status(204).send();

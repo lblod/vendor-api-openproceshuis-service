@@ -1,20 +1,16 @@
 import jsonld from 'jsonld';
 import { sparqlEscapeUri, query } from 'mu';
-import { Request } from 'express';
 
 import { log } from '../util/logger';
 import { HttpError } from '../util/http-error';
 import isUrl from '../util/is-url';
-import { enrichRequestBodyWithContext } from './request';
 
 export async function validateRequestBodyAgainstContext(
-  req: Request,
+  requestDataAsLd: any,
 ): Promise<void> {
-  const enrichedBody = enrichRequestBodyWithContext(req);
-  const ldMainNode = await requestBodyToLd(enrichedBody);
   const resource = {
-    uri: ldMainNode['@id'],
-    typeUri: ldMainNode['@type'][0],
+    uri: requestDataAsLd['@id'],
+    typeUri: requestDataAsLd['@type'][0],
   };
   const foundTypeForResourceUri = await getResourceTypeUri(resource.uri);
   if (foundTypeForResourceUri && foundTypeForResourceUri !== resource.typeUri) {
@@ -29,11 +25,11 @@ export async function validateRequestBodyAgainstContext(
       },
     );
   }
-  Object.keys(ldMainNode).map((key) => {
+  Object.keys(requestDataAsLd).map((key) => {
     if (['@id', '@reverse', '@type'].includes(key)) {
       return;
     }
-    ldMainNode[key].map(
+    requestDataAsLd[key].map(
       (prop: { '@id'?: string; '@type'?: string; '@value'?: string }) => {
         const uriObjectValue = prop['@id'];
         if (uriObjectValue && !isUrl(uriObjectValue)) {
@@ -89,7 +85,9 @@ function prepareForExpansion(data: any) {
   return result;
 }
 
-async function requestBodyToLd(enrichedBody: object): Promise<object> {
+export async function getRequestBodyAsLinkedData(
+  enrichedBody: object,
+): Promise<object> {
   const context = enrichedBody['@context'];
   delete enrichedBody['@context'];
   const cleanData = prepareForExpansion(enrichedBody);
