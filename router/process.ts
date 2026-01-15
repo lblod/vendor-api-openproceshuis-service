@@ -9,7 +9,7 @@ import {
   createNewProcess,
   patchProcess,
   removeFileFromProcess,
-  validateRequestValues,
+  validatePropertiesForRequired,
 } from '../controller/process';
 import isUrl from '../util/is-url';
 import { getVendorUriFromSession } from '../controller/impersonate';
@@ -31,6 +31,8 @@ processRouter.post('/', async (req: Request, res: Response) => {
     const { bestuursEenheid, sessionUri } = await authenticateBeforeAction(req);
 
     const resourceUri = errorOnResourceUriMissingInRequest(req);
+    validatePropertiesForRequired(req, { post: true });
+
     const expandedLd = await getExpandedRequestBody(
       enrichRequestBodyWithContext(req),
     );
@@ -38,7 +40,6 @@ processRouter.post('/', async (req: Request, res: Response) => {
     const requestInsertDataTriples = await getQuadInsertDataFromRequestBody(
       enrichRequestBodyWithContext(req),
     );
-    validateRequestValues(req, { post: true });
 
     const vendorUri = await getVendorUriFromSession(sessionUri);
     const processUri = await createNewProcess(
@@ -60,6 +61,8 @@ processRouter.patch('/', async (req: Request, res: Response) => {
     const { sessionUri } = await authenticateBeforeAction(req);
 
     const resourceUri = errorOnResourceUriMissingInRequest(req);
+    validatePropertiesForRequired(req, { patch: true });
+
     const requestDataAsLd = await getExpandedRequestBody(
       enrichRequestBodyWithContext(req),
     );
@@ -70,7 +73,6 @@ processRouter.patch('/', async (req: Request, res: Response) => {
     const requestDeleteDataTriples = await getQuadDeleteDataFromRequestBody(
       enrichRequestBodyWithContext(req),
     );
-    validateRequestValues(req, { patch: true });
 
     const vendorUri = await getVendorUriFromSession(sessionUri);
     await patchProcess(
@@ -92,6 +94,8 @@ processRouter.put('/', async (req: Request, res: Response) => {
     const { sessionUri } = await authenticateBeforeAction(req);
 
     const resourceUri = errorOnResourceUriMissingInRequest(req);
+    validatePropertiesForRequired(req, { put: true });
+
     const requestDataAsLd = await getExpandedRequestBody(
       enrichRequestBodyWithContext(req),
     );
@@ -102,7 +106,6 @@ processRouter.put('/', async (req: Request, res: Response) => {
     const requestDeleteDataTriples = await getQuadDeleteDataFromRequestBody(
       enrichRequestBodyWithContext(req),
     );
-    validateRequestValues(req, { put: true });
 
     const vendorUri = await getVendorUriFromSession(sessionUri);
     await patchProcess(

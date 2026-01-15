@@ -116,41 +116,6 @@ export async function patchProcess(
   });
 }
 
-export function createPutProcessRequest(request: Request): any {
-  const allProcessKeys = [
-    '@id',
-    'title',
-    'description',
-    'email',
-    'linked-concept',
-    'users',
-    'diagrams',
-    'attachments',
-  ];
-  const isContainingAllKeys = Object.keys(request.body)
-    .filter((key) => ['@context'].includes(key))
-    .every((key) => allProcessKeys.includes(key));
-
-  if (!isContainingAllKeys) {
-    throw new HttpError(
-      'Not all keys are provided or have a value.',
-      400,
-      `Make sure to add all process properties in the body with there value when doing a PUT request. (${allProcessKeys.join(', ')})`,
-    );
-  }
-
-  return {
-    '@id': request.body['@id'],
-    title: request.body['title'],
-    contact: request.body['email'],
-    description: request.body['description'],
-    linkedInventoryProcess: request.body['linked-concept'],
-    users: request.body['users'],
-    diagrams: request.body['diagrams'],
-    attachments: request.body['attachments'],
-  };
-}
-
 export async function archiveProcess(
   processUri: string,
   vendorUri: string,
@@ -244,119 +209,84 @@ export async function removeFileFromProcess(
   });
 }
 
-export function validateRequestValues(
+export function validatePropertiesForRequired(
   request: Request,
   requestType: { post?: boolean; patch?: boolean; put?: boolean },
 ) {
-  const id = request.body['@id'];
-  const linkedInventoryProcess = request.body['linked-concept'] ?? null;
-  const {
-    title = null,
-    email = null,
-    description = null,
-    users = null,
-    diagrams = null,
-    attachments = null,
-  } = request.body;
+  const valueIsStringAndNotEmpty = (value: unknown) =>
+    typeof value === 'string' && value.trim() !== '';
+  const valueIsArrayOfUris = (value: unknown) =>
+    Array.isArray(value) && !value.every((uri: string) => isUrl(uri));
 
-  if (!id) {
-    throw new HttpError(
-      'Property "@id" is required in the body.',
-      400,
-      'The "@id" property must always be in the request body.',
-    );
+  const keyMapping = {
+    title: (value: any) => !value || valueIsStringAndNotEmpty(value),
+    description: (value: any) => !value || valueIsStringAndNotEmpty(value),
+    email: (value: any) => !value || (valueIsStringAndNotEmpty(value) && true), // TODO - must be email
+    'linked-concept': (value: any) =>
+      !value || (valueIsStringAndNotEmpty(value) && isUrl(value)),
+    diagrams: (value: any) => !value || valueIsArrayOfUris(value),
+    attachments: (value: any) => !value || valueIsArrayOfUris(value),
+    users: (value: any) => !value || valueIsArrayOfUris(value),
+  };
+
+  if (requestType.post) {
+    if (!keyMapping['title'](request.body['title'])) {
+      throw new HttpError(
+        'Property "title" is required in the request body.',
+        400,
+        'The "title" property must be in the request body as null or a non empty string.',
+      );
+    }
   }
-  if (requestType.post && !title) {
-    throw new HttpError(
-      'Property "title" is required in the body.',
-      400,
-      'When creating a process the "title" property must be in the request body.',
-    );
+  if (requestType.patch) {
+    Object.keys(request.body)
+      .filter((key) => !['@id', 'type'].includes(key))
+      .map((jsonKey) => {
+        if (!(jsonKey in keyMapping)) {
+          throw new HttpError(
+            `Property "${jsonKey}" is not allowed to be passed on to the request body.`,
+            400,
+            'Contact a maintainer if this property should be allowed.',
+            {
+              property: jsonKey,
+            },
+          );
+        }
+        if (!keyMapping[jsonKey](request.body[jsonKey])) {
+          throw new HttpError(
+            `Property "${jsonKey}" is required in the request body and must be a valid type.`,
+            400,
+            'The property must be in the request body as null, number, array or a non empty string.',
+            {
+              property: jsonKey,
+            },
+          );
+        }
+      });
   }
-  if (requestType.put && typeof email == 'string' && email.trim() == '') {
-    throw new HttpError(
-      'Property "email" cannot be empty.',
-      400,
-      'When replacing a process the "email" property must be in the request body.',
-    );
-  }
-  if (
-    requestType.put &&
-    typeof description == 'string' &&
-    description.trim() == ''
-  ) {
-    throw new HttpError(
-      'Property "description" cannot be empty.',
-      400,
-      'When replacing a process the "description" property must be in the request body.',
-    );
-  }
-  if (
-    (requestType.patch || requestType.put) &&
-    title &&
-    typeof title == 'string' &&
-    title.trim() == ''
-  ) {
-    throw new HttpError(
-      'Property "title" cannot be empty',
-      400,
-      'The "title" of the process should be an identifier for frontend applications, do not leave this empty.',
-    );
-  }
-  if (
-    typeof linkedInventoryProcess == 'string' &&
-    !isUrl(linkedInventoryProcess)
-  ) {
-    throw new HttpError(
-      'Property "linked-concept" must be an URI',
-      400,
-      'The "linked-concept" property must be the URI of the inventory process subject.',
-    );
-  }
-  if (typeof users !== 'object' && !Array.isArray(users)) {
-    throw new HttpError(
-      'Property "users" must be an array',
-      400,
-      'The "user" property must be an array of administrative unit uris so we can see who is working with this process.',
-    );
-  }
-  if (Array.isArray(users) && !users.every((uri: string) => isUrl(uri))) {
-    throw new HttpError(
-      'Values of "users" must all be URIs',
-      400,
-      'The "user" property must be an array of administrative unit uris. Example: ["http://data.lblod.info/id/bestuurseenheden/abc"]',
-    );
-  }
-  if (typeof diagrams !== 'object' && !Array.isArray(diagrams)) {
-    throw new HttpError(
-      'Property "diagrams" must be an array',
-      400,
-      'The "diagrams" property must be an array of file uris.',
-    );
-  }
-  if (Array.isArray(diagrams) && !diagrams.every((uri: string) => isUrl(uri))) {
-    throw new HttpError(
-      'Values of "diagrams" must all be URIs',
-      400,
-      'The "diagrams" property must be an array of file uris. Example: ["http://data.lblod.info/files/abc"]',
-    );
-  }
-  if (typeof attachments !== 'object' && !Array.isArray(attachments)) {
-    throw new HttpError(
-      'Property "attachments" must be an array',
-      400,
-      'The "attachments" property must be an array of file uris.',
-    );
-  }
-  if (
-    Array.isArray(attachments) &&
-    !attachments.every((uri: string) => isUrl(uri))
-  ) {
-    throw new HttpError(
-      'Values of "attachments" must all be URIs',
-      400,
-      'The "attachments" property must be an array of file uris. Example: ["http://data.lblod.info/files/abc"]',
-    );
+  if (requestType.put) {
+    Object.keys(keyMapping).map((jsonKey) => {
+      if (!(jsonKey in request.body)) {
+        throw new HttpError(
+          `Property "${jsonKey}" is missing from the request body.`,
+          400,
+          'The property must be in the request body to use this endpoint',
+          {
+            property: jsonKey,
+          },
+        );
+      }
+      if (!keyMapping[jsonKey](request.body[jsonKey])) {
+        throw new HttpError(
+          `Property "${jsonKey}" is required in the request body and must be a valid type.`,
+          400,
+          'The property must be in the request body as null, number, array or a non empty string.',
+          {
+            property: jsonKey,
+          },
+        );
+      }
+    });
   }
 }
 
