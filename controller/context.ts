@@ -147,14 +147,15 @@ export async function getQuadDeleteDataFromRequestBody(
       return;
     }
 
+    const safeQueryKey = key.replace(/[^a-zA-Z0-9]/g, '');
     if (context[key]?.['@reverse']) {
       const predicate = context[key]?.['@reverse'];
-      const tripleString = `?${key} ${sparqlEscapeUri(predicate)} ${sparqlEscapeUri(resourceUri)} .`;
+      const tripleString = `?${safeQueryKey} ${sparqlEscapeUri(predicate)} ${sparqlEscapeUri(resourceUri)} .`;
       deleteTriplesArray.push(tripleString);
       whereDeleteTriplesArray.push(`OPTIONAL { ${tripleString} }`);
     } else {
       const predicate = context[key]?.['@id'];
-      const tripleString = `${sparqlEscapeUri(resourceUri)} ${sparqlEscapeUri(predicate)} ?${key} .`;
+      const tripleString = `${sparqlEscapeUri(resourceUri)} ${sparqlEscapeUri(predicate)} ?${safeQueryKey} .`;
       deleteTriplesArray.push(tripleString);
       whereDeleteTriplesArray.push(`OPTIONAL { ${tripleString} }`);
     }
