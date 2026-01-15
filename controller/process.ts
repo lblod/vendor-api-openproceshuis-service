@@ -2,7 +2,7 @@ import { Request } from 'express';
 
 import { HttpError } from '../util/http-error';
 import isUrl from '../util/is-url';
-import { BestuursEenheid, PutProcessRequest } from '../types';
+import { BestuursEenheid } from '../types';
 import {
   sparqlEscapeUri,
   query,
@@ -87,7 +87,7 @@ export async function patchProcess(
       process: processUri,
     },
   );
-  log.debug('PATCH: Removed properties of process', {
+  log.debug('Removed properties of process', {
     triples: requestDeleteDataTriples,
   });
   await updateQueryWithCatch(
@@ -111,96 +111,12 @@ export async function patchProcess(
       process: processUri,
     },
   );
-  log.debug('PATCH: Updated properties of process', {
+  log.debug('Updated properties of process', {
     triples: requestInsertDataTriples,
   });
 }
 
-export async function putProcess(
-  process: PutProcessRequest,
-  vendorUri: string,
-): Promise<void> {
-  if (!(await isExistingProcessUri(process['@id']))) {
-    throw new HttpError(
-      'Process with uri not found.',
-      404,
-      'The given uri for the process was not found. Does it exist? Do you have rights to update the process?',
-    );
-  }
-
-  const valuesStatements = [];
-  const whereQueryValues = [
-    '?process dct:title ?title .',
-    '?process dct:description ?description .',
-    '?process schema:email ?contact .',
-    '?process dct:source ?source .',
-    '?process prov:usedBy ?users .',
-    '?diagrams nie:isPartOf ?process .',
-    '?attachments nie:isPartOf ?process .',
-  ];
-  let usersQuery = '';
-  let diagramsQuery = '';
-  let attachmentsQuery = '';
-  if (process.users.length >= 1) {
-    valuesStatements.push(
-      `VALUES ?newUsers { ${process.users.map((userUri) => sparqlEscapeUri(userUri)).join('\n')} }`,
-    );
-    usersQuery = '?process prov:usedBy ?newUsers .';
-  }
-  if (process.diagrams.length >= 1) {
-    valuesStatements.push(
-      `VALUES ?newDiagrams { ${process.diagrams.map((diagramUri) => sparqlEscapeUri(diagramUri)).join('\n')} }`,
-    );
-
-    diagramsQuery = '?newDiagrams nie:isPartOf ?process .';
-  }
-  if (process.attachments.length >= 1) {
-    valuesStatements.push(
-      `VALUES ?newAttachments { ${process.attachments.map((attachmentUri) => sparqlEscapeUri(attachmentUri)).join('\n')} }`,
-    );
-    attachmentsQuery = '?newAttachments nie:isPartOf ?process .';
-  }
-  await updateQueryWithCatch(
-    `
-    PREFIX dpv: <https://w3id.org/dpv#>
-    PREFIX dct: <http://purl.org/dc/terms/>
-    PREFIX prov: <http://www.w3.org/ns/prov#>
-    PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
-    PREFIX schema: <https://schema.org/>
-    DELETE {
-      ${whereQueryValues.join('\n')}
-    }
-    INSERT {
-      ?process dct:title ${sparqlEscapeString(process.title)} .
-      ?process dct:description ${sparqlEscapeString(process.description)}.
-      ?process schema:email ${sparqlEscapeString(process.contact)}.
-      ?process dct:source ${sparqlEscapeUri(process.linkedInventoryProcess)}.
-      ${usersQuery}
-      ${diagramsQuery}
-      ${attachmentsQuery}
-      ?process dct:contributor ${sparqlEscapeUri(vendorUri)} .
-    }
-    WHERE {
-      GRAPH ?g {
-        VALUES ?process { ${sparqlEscapeUri(process['@id'])} }
-        ?process a dpv:Process .
-        ${valuesStatements.join('\n')}
-        ${whereQueryValues.map((value) => `OPTIONAL { ${value} }`).join('\n')}
-      }
-    }  
-  `,
-    { sudo: false },
-    'Sparql query for replacing process resource properties failed.',
-    {
-      process: process['@id'],
-    },
-  );
-  log.info('Replaced properties of proces with new values.', {
-    process: process['@id'],
-  });
-}
-
-export function createPutProcessRequest(request: Request): PutProcessRequest {
+export function createPutProcessRequest(request: Request): any {
   const allProcessKeys = [
     '@id',
     'title',
@@ -222,7 +138,6 @@ export function createPutProcessRequest(request: Request): PutProcessRequest {
       `Make sure to add all process properties in the body with there value when doing a PUT request. (${allProcessKeys.join(', ')})`,
     );
   }
-  validateRequestValues(request, { put: true });
 
   return {
     '@id': request.body['@id'],

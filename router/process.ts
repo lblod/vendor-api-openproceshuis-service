@@ -7,9 +7,7 @@ import { authenticateBeforeAction } from '../controller/auth';
 import {
   archiveProcess,
   createNewProcess,
-  createPutProcessRequest,
   patchProcess,
-  putProcess,
   removeFileFromProcess,
   validateRequestValues,
 } from '../controller/process';
@@ -93,14 +91,26 @@ processRouter.put('/', async (req: Request, res: Response) => {
   try {
     const { sessionUri } = await authenticateBeforeAction(req);
 
-    errorOnResourceUriMissingInRequest(req);
-    const enrichedRequestBody = await enrichRequestBodyWithContext(req);
-    const requestDataAsLd = await getExpandedRequestBody(enrichedRequestBody);
+    const resourceUri = errorOnResourceUriMissingInRequest(req);
+    const requestDataAsLd = await getExpandedRequestBody(
+      enrichRequestBodyWithContext(req),
+    );
     await validateRequestBodyAgainstExpandedLd(requestDataAsLd);
+    const requestInsertDataTriples = await getQuadInsertDataFromRequestBody(
+      enrichRequestBodyWithContext(req),
+    );
+    const requestDeleteDataTriples = await getQuadDeleteDataFromRequestBody(
+      enrichRequestBodyWithContext(req),
+    );
+    validateRequestValues(req, { put: true });
 
-    const putRequest = createPutProcessRequest(req);
     const vendorUri = await getVendorUriFromSession(sessionUri);
-    await putProcess(putRequest, vendorUri);
+    await patchProcess(
+      resourceUri,
+      vendorUri,
+      requestInsertDataTriples,
+      requestDeleteDataTriples,
+    );
 
     return res.status(200).send();
   } catch (error) {
