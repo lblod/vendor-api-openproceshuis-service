@@ -7,7 +7,6 @@ import { authenticateBeforeAction } from '../controller/auth';
 import {
   archiveProcess,
   createNewProcess,
-  createPatchProcessRequest,
   createPutProcessRequest,
   patchProcess,
   putProcess,
@@ -22,6 +21,7 @@ import {
 } from '../controller/request';
 import {
   getExpandedRequestBody,
+  getQuadDeleteDataFromRequestBody,
   getQuadInsertDataFromRequestBody,
   validateRequestBodyAgainstExpandedLd,
 } from '../controller/context';
@@ -61,14 +61,26 @@ processRouter.patch('/', async (req: Request, res: Response) => {
   try {
     const { sessionUri } = await authenticateBeforeAction(req);
 
-    errorOnResourceUriMissingInRequest(req);
-    const enrichedRequestBody = await enrichRequestBodyWithContext(req);
-    const requestDataAsLd = await getExpandedRequestBody(enrichedRequestBody);
+    const resourceUri = errorOnResourceUriMissingInRequest(req);
+    const requestDataAsLd = await getExpandedRequestBody(
+      enrichRequestBodyWithContext(req),
+    );
     await validateRequestBodyAgainstExpandedLd(requestDataAsLd);
+    const requestInsertDataTriples = await getQuadInsertDataFromRequestBody(
+      enrichRequestBodyWithContext(req),
+    );
+    const requestDeleteDataTriples = await getQuadDeleteDataFromRequestBody(
+      enrichRequestBodyWithContext(req),
+    );
+    validateRequestValues(req, { patch: true });
 
-    const patchRequest = createPatchProcessRequest(req);
     const vendorUri = await getVendorUriFromSession(sessionUri);
-    await patchProcess(patchRequest, vendorUri);
+    await patchProcess(
+      resourceUri,
+      vendorUri,
+      requestInsertDataTriples,
+      requestDeleteDataTriples,
+    );
 
     return res.status(200).send();
   } catch (error) {

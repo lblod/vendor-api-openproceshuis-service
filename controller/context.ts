@@ -112,7 +112,9 @@ export async function getExpandedRequestBody(
   }
 }
 
-export async function getQuadInsertDataFromRequestBody(enrichedBody: any) {
+export async function getQuadInsertDataFromRequestBody(
+  enrichedBody: any,
+): Promise<string> {
   const context = enrichedBody['@context'];
   delete enrichedBody['@context'];
   try {
@@ -130,6 +132,38 @@ export async function getQuadInsertDataFromRequestBody(enrichedBody: any) {
       'Could not created quads to use in insert data query.',
     );
   }
+}
+
+export async function getQuadDeleteDataFromRequestBody(
+  enrichedBody: any,
+): Promise<{ delete: string; where: string }> {
+  const resourceUri = enrichedBody['@id'];
+  const context = enrichedBody['@context'];
+  const deleteTriplesArray = [];
+  const whereDeleteTriplesArray = [];
+  Object.keys(enrichedBody).map((key) => {
+    const keysToIgnore = ['@id', '@context', 'type'];
+    if (keysToIgnore.includes(key)) {
+      return;
+    }
+
+    if (context[key]?.['@reverse']) {
+      const predicate = context[key]?.['@reverse'];
+      const tripleString = `?${key} ${sparqlEscapeUri(predicate)} ${sparqlEscapeUri(resourceUri)} .`;
+      deleteTriplesArray.push(tripleString);
+      whereDeleteTriplesArray.push(`OPTIONAL { ${tripleString} }`);
+    } else {
+      const predicate = context[key]?.['@id'];
+      const tripleString = `${sparqlEscapeUri(resourceUri)} ${sparqlEscapeUri(predicate)} ?${key} .`;
+      deleteTriplesArray.push(tripleString);
+      whereDeleteTriplesArray.push(`OPTIONAL { ${tripleString} }`);
+    }
+  });
+
+  return {
+    delete: deleteTriplesArray.join('\n'),
+    where: whereDeleteTriplesArray.join('\n'),
+  };
 }
 
 async function getResourceTypeUri(

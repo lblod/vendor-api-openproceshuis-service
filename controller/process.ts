@@ -2,11 +2,7 @@ import { Request } from 'express';
 
 import { HttpError } from '../util/http-error';
 import isUrl from '../util/is-url';
-import {
-  BestuursEenheid,
-  PatchProcessRequest,
-  PutProcessRequest,
-} from '../types';
+import { BestuursEenheid, PutProcessRequest } from '../types';
 import {
   sparqlEscapeUri,
   query,
@@ -58,126 +54,66 @@ export async function createNewProcess(
 }
 
 export async function patchProcess(
-  process: PatchProcessRequest,
+  processUri: string,
   vendorUri: string,
+  requestInsertDataTriples: string,
+  requestDeleteDataTriples: { delete: string; where: string },
 ): Promise<void> {
-  if (!(await isExistingProcessUri(process['@id']))) {
+  if (!(await isExistingProcessUri(processUri))) {
     throw new HttpError(
       'Process with uri not found.',
       404,
       'The given uri for the process was not found. Does it exist? Do you have rights to update the process?',
     );
   }
-  let title = '';
-  let description = '';
-  let contact = '';
-  let linkedInventoryProcess = '';
-  let users = '';
-  let diagrams = '';
-  let attachments = '';
-  const deleteQueryValues = [];
 
-  if ('title' in process) {
-    deleteQueryValues.push('?process dct:title ?title .');
-    if (process.title && process.title.trim() !== '') {
-      title = `?process dct:title ${sparqlEscapeString(process.title)} .`;
-    }
-  }
-  if ('description' in process) {
-    deleteQueryValues.push('?process dct:description ?description .');
-    if (process.description && process.description.trim() !== '') {
-      description = `?process dct:description ${sparqlEscapeString(process.description)} .`;
-    }
-  }
-  if ('email' in process) {
-    deleteQueryValues.push('?process schema:email ?contact .');
-    if (process.email) {
-      contact = `?process schema:email ${sparqlEscapeString(process.email)} .`;
-    }
-  }
-  if ('linked-concept' in process) {
-    deleteQueryValues.push('?process dct:source ?source .');
-    if (process.linkedInventoryProcess) {
-      linkedInventoryProcess = `?process dct:source ${sparqlEscapeUri(process['linked-concept'])} .`;
-    }
-  }
-  if ('users' in process) {
-    deleteQueryValues.push('?process prov:usedBy ?users .');
-    if (process.users.length >= 1) {
-      users = process.users
-        .map((uri) => `?process prov:usedBy ${sparqlEscapeUri(uri)} .`)
-        .join('\n');
-    }
-  }
-  if ('diagrams' in process) {
-    deleteQueryValues.push('?diagrams nie:isPartOf ?process .');
-    if (process.diagrams.length >= 1) {
-      diagrams = process.diagrams
-        .map((uri) => `${sparqlEscapeUri(uri)} nie:isPartOf ?process .`)
-        .join('\n');
-    }
-  }
-  if ('attachments' in process) {
-    deleteQueryValues.push('?attachments nie:isPartOf ?process .');
-    if (process.attachments.length >= 1) {
-      attachments = process.attachments
-        .map((uri) => `${sparqlEscapeUri(uri)} nie:isPartOf ?process .`)
-        .join('\n');
-    }
-  }
   await updateQueryWithCatch(
     `
     PREFIX dpv: <https://w3id.org/dpv#>
-    PREFIX dct: <http://purl.org/dc/terms/>
-    PREFIX prov: <http://www.w3.org/ns/prov#>
-    PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
-    PREFIX schema: <https://schema.org/>
     DELETE {
-      ${deleteQueryValues.join('\n')}
-    }
-    INSERT {
-      ${title}
-      ${description}
-      ${contact}
-      ${linkedInventoryProcess}
-      ${users}
-      ${diagrams}
-      ${attachments}
-      ?process dct:contributor ${sparqlEscapeUri(vendorUri)} .
+      ${requestDeleteDataTriples.delete}
     }
     WHERE {
       GRAPH ?g {
-        VALUES ?process { ${sparqlEscapeUri(process['@id'])} }
+        VALUES ?process { ${sparqlEscapeUri(processUri)} }
         ?process a dpv:Process .
-        ${deleteQueryValues.map((value) => `OPTIONAL { ${value} }`).join('\n')}
+        ${requestDeleteDataTriples.where}
       }
     }  
   `,
     { sudo: false },
     'Sparql query for updating process resource properties failed.',
     {
-      process: process['@id'],
+      process: processUri,
     },
   );
-  log.info('Updated properties of process', {
-    properties: Object.keys(process),
+  log.debug('PATCH: Removed properties of process', {
+    triples: requestDeleteDataTriples,
   });
-}
-
-export function createPatchProcessRequest(
-  request: Request,
-): PatchProcessRequest {
-  validateRequestValues(request, { patch: true });
-
-  const dataToPatch = {
-    '@id': request.body['@id'],
-  };
-
-  Object.keys(request.body).map((key) => {
-    dataToPatch[key] = request.body[key];
+  await updateQueryWithCatch(
+    `
+    PREFIX dpv: <https://w3id.org/dpv#>
+    PREFIX dct: <http://purl.org/dc/terms/>
+    INSERT {
+      ${requestInsertDataTriples}
+      ?process dct:contributor ${sparqlEscapeUri(vendorUri)} .
+    }
+    WHERE {
+      GRAPH ?g {
+        VALUES ?process { ${sparqlEscapeUri(processUri)} }
+        ?process a dpv:Process .
+      }
+    }  
+  `,
+    { sudo: false },
+    'Sparql query for updating process resource properties failed.',
+    {
+      process: processUri,
+    },
+  );
+  log.debug('PATCH: Updated properties of process', {
+    triples: requestInsertDataTriples,
   });
-
-  return dataToPatch;
 }
 
 export async function putProcess(
