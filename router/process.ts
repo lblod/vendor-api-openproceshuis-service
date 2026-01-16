@@ -7,7 +7,7 @@ import { authenticateBeforeAction } from '../controller/auth';
 import {
   archiveProcess,
   createNewProcess,
-  patchProcess,
+  updateProcess,
   removeFileFromProcess,
 } from '../controller/process';
 import isUrl from '../util/is-url';
@@ -77,7 +77,7 @@ processRouter.patch('/', async (req: Request, res: Response) => {
     );
 
     const vendorUri = await getVendorUriFromSession(sessionUri);
-    await patchProcess(
+    await updateProcess(
       resourceUri,
       vendorUri,
       requestInsertDataTriples,
@@ -110,7 +110,7 @@ processRouter.put('/', async (req: Request, res: Response) => {
     );
 
     const vendorUri = await getVendorUriFromSession(sessionUri);
-    await patchProcess(
+    await updateProcess(
       resourceUri,
       vendorUri,
       requestInsertDataTriples,

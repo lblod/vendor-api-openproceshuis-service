@@ -50,7 +50,7 @@ export async function createNewProcess(
   return processUri;
 }
 
-export async function patchProcess(
+export async function updateProcess(
   processUri: string,
   vendorUri: string,
   requestInsertDataTriples: string,
