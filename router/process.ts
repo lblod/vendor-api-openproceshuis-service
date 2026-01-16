@@ -9,13 +9,15 @@ import {
   createNewProcess,
   patchProcess,
   removeFileFromProcess,
-  validatePropertiesForRequired,
 } from '../controller/process';
 import isUrl from '../util/is-url';
 import { getVendorUriFromSession } from '../controller/impersonate';
 import {
   enrichRequestBodyWithContext,
   errorOnResourceUriMissingInRequest,
+  validatePatchProcessRequestBody,
+  validatePostProcessRequestBody,
+  validatePutProcessRequestBody,
 } from '../controller/request';
 import {
   getExpandedRequestBody,
@@ -31,7 +33,7 @@ processRouter.post('/', async (req: Request, res: Response) => {
     const { bestuursEenheid, sessionUri } = await authenticateBeforeAction(req);
 
     const resourceUri = errorOnResourceUriMissingInRequest(req);
-    validatePropertiesForRequired(req, { post: true });
+    validatePostProcessRequestBody(req);
 
     const expandedLd = await getExpandedRequestBody(
       enrichRequestBodyWithContext(req),
@@ -61,7 +63,7 @@ processRouter.patch('/', async (req: Request, res: Response) => {
     const { sessionUri } = await authenticateBeforeAction(req);
 
     const resourceUri = errorOnResourceUriMissingInRequest(req);
-    validatePropertiesForRequired(req, { patch: true });
+    validatePatchProcessRequestBody(req);
 
     const requestDataAsLd = await getExpandedRequestBody(
       enrichRequestBodyWithContext(req),
@@ -94,7 +96,7 @@ processRouter.put('/', async (req: Request, res: Response) => {
     const { sessionUri } = await authenticateBeforeAction(req);
 
     const resourceUri = errorOnResourceUriMissingInRequest(req);
-    validatePropertiesForRequired(req, { put: true });
+    validatePutProcessRequestBody(req);
 
     const requestDataAsLd = await getExpandedRequestBody(
       enrichRequestBodyWithContext(req),

@@ -1,7 +1,4 @@
-import { Request } from 'express';
-
 import { HttpError } from '../util/http-error';
-import isUrl from '../util/is-url';
 import { BestuursEenheid } from '../types';
 import {
   sparqlEscapeUri,
@@ -207,87 +204,6 @@ export async function removeFileFromProcess(
     process: processUri,
     file: fileUri,
   });
-}
-
-export function validatePropertiesForRequired(
-  request: Request,
-  requestType: { post?: boolean; patch?: boolean; put?: boolean },
-) {
-  const valueIsStringAndNotEmpty = (value: unknown) =>
-    typeof value === 'string' && value.trim() !== '';
-  const valueIsArrayOfUris = (value: unknown) =>
-    Array.isArray(value) && !value.every((uri: string) => isUrl(uri));
-
-  const keyMapping = {
-    title: (value: any) => !value || valueIsStringAndNotEmpty(value),
-    description: (value: any) => !value || valueIsStringAndNotEmpty(value),
-    email: (value: any) => !value || (valueIsStringAndNotEmpty(value) && true), // TODO - must be email
-    'linked-concept': (value: any) =>
-      !value || (valueIsStringAndNotEmpty(value) && isUrl(value)),
-    diagrams: (value: any) => !value || valueIsArrayOfUris(value),
-    attachments: (value: any) => !value || valueIsArrayOfUris(value),
-    users: (value: any) => !value || valueIsArrayOfUris(value),
-  };
-
-  if (requestType.post) {
-    if (!keyMapping['title'](request.body['title'])) {
-      throw new HttpError(
-        'Property "title" is required in the request body.',
-        400,
-        'The "title" property must be in the request body as null or a non empty string.',
-      );
-    }
-  }
-  if (requestType.patch) {
-    Object.keys(request.body)
-      .filter((key) => !['@id', 'type'].includes(key))
-      .map((jsonKey) => {
-        if (!(jsonKey in keyMapping)) {
-          throw new HttpError(
-            `Property "${jsonKey}" is not allowed to be passed on to the request body.`,
-            400,
-            'Contact a maintainer if this property should be allowed.',
-            {
-              property: jsonKey,
-            },
-          );
-        }
-        if (!keyMapping[jsonKey](request.body[jsonKey])) {
-          throw new HttpError(
-            `Property "${jsonKey}" is required in the request body and must be a valid type.`,
-            400,
-            'The property must be in the request body as null, number, array or a non empty string.',
-            {
-              property: jsonKey,
-            },
-          );
-        }
-      });
-  }
-  if (requestType.put) {
-    Object.keys(keyMapping).map((jsonKey) => {
-      if (!(jsonKey in request.body)) {
-        throw new HttpError(
-          `Property "${jsonKey}" is missing from the request body.`,
-          400,
-          'The property must be in the request body to use this endpoint',
-          {
-            property: jsonKey,
-          },
-        );
-      }
-      if (!keyMapping[jsonKey](request.body[jsonKey])) {
-        throw new HttpError(
-          `Property "${jsonKey}" is required in the request body and must be a valid type.`,
-          400,
-          'The property must be in the request body as null, number, array or a non empty string.',
-          {
-            property: jsonKey,
-          },
-        );
-      }
-    });
-  }
 }
 
 async function isExistingProcessUri(processUri: string): Promise<boolean> {
