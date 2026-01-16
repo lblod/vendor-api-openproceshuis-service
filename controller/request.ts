@@ -5,6 +5,7 @@ import { log } from '../util/logger';
 import { processContext } from '../context';
 import isUrl from '../util/is-url';
 import isEmail from '../util/is-email';
+import isMaxLength from '../util/is-max-length';
 
 export function getSessionUriFromRequest(request: Request): string {
   const HEADER_MU_SESSION_ID = 'mu-session-id';
@@ -60,13 +61,15 @@ const processResourceKeys = () => {
 
   const processKeys = {
     title: {
-      validate: (value: any) => valueIsStringAndNotEmpty(value),
-      requiredValueAsString: 'a non-empty string',
+      validate: (value: any) =>
+        valueIsStringAndNotEmpty(value) && !isMaxLength(value, 250),
+      requiredValueAsString: 'a non-empty string, characters: 250',
     },
     description: {
       validate: (value: any) =>
-        value === null || valueIsStringAndNotEmpty(value),
-      requiredValueAsString: 'null or a non-empty string',
+        value === null ||
+        (valueIsStringAndNotEmpty(value) && !isMaxLength(value, 1500)),
+      requiredValueAsString: 'null or a non-empty string, characters: 1500',
     },
     email: {
       validate: (value: any) =>
