@@ -119,10 +119,11 @@ export async function getQuadInsertDataFromRequestBody(
 ): Promise<string> {
   const context = enrichedBody['@context'];
   delete enrichedBody['@context'];
+  const cleanData = prepareForExpansion(enrichedBody);
   try {
     return await jsonld.toRDF(
       {
-        ...enrichedBody,
+        ...cleanData,
         '@context': context,
       },
       { format: 'application/n-quads' },
