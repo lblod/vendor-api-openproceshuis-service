@@ -4,6 +4,7 @@ import { HttpError } from '../util/http-error';
 import { log } from '../util/logger';
 import { processContext } from '../context';
 import isUrl from '../util/is-url';
+import isEmail from '../util/is-email';
 
 export function getSessionUriFromRequest(request: Request): string {
   const HEADER_MU_SESSION_ID = 'mu-session-id';
@@ -69,9 +70,9 @@ const processResourceKeys = () => {
     },
     email: {
       validate: (value: any) =>
-        value === null || (valueIsStringAndNotEmpty(value) && true),
-      requiredValueAsString: 'null or a non-empty string',
-    }, // TODO - must be email
+        value === null || (valueIsStringAndNotEmpty(value) && isEmail(value)),
+      requiredValueAsString: 'null or an email',
+    },
     'linked-concept': {
       validate: (value: any) =>
         value === null || (valueIsStringAndNotEmpty(value) && isUrl(value)),
