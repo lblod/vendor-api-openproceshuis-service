@@ -3,3 +3,10 @@ export type BestuursEenheid = {
   uri: string;
   organizationGraphUri: string;
 };
+
+export type EnrichedBody = {
+  '@id': string;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  '@context': any;
+  [key: string]: null | string | number | Array<string>;
+};

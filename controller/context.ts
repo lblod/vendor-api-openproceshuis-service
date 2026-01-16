@@ -4,8 +4,10 @@ import { sparqlEscapeUri, query } from 'mu';
 import { log } from '../util/logger';
 import { HttpError } from '../util/http-error';
 import isUrl from '../util/is-url';
+import { EnrichedBody } from '../types';
 
 export async function validateRequestBodyAgainstExpandedLd(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   expandedLd: any,
 ): Promise<void> {
   const resource = {
@@ -74,7 +76,7 @@ export async function validateRequestBodyAgainstExpandedLd(
   });
 }
 
-function prepareForExpansion(data: any) {
+function prepareForExpansion(data: EnrichedBody) {
   const result = { ...data };
   Object.keys(result).forEach((key) => {
     const value = result[key];
@@ -86,7 +88,7 @@ function prepareForExpansion(data: any) {
 }
 
 export async function getExpandedRequestBody(
-  enrichedBody: object,
+  enrichedBody: EnrichedBody,
 ): Promise<object> {
   const context = enrichedBody['@context'];
   delete enrichedBody['@context'];
@@ -113,7 +115,7 @@ export async function getExpandedRequestBody(
 }
 
 export async function getQuadInsertDataFromRequestBody(
-  enrichedBody: any,
+  enrichedBody: EnrichedBody,
 ): Promise<string> {
   const context = enrichedBody['@context'];
   delete enrichedBody['@context'];
@@ -135,7 +137,7 @@ export async function getQuadInsertDataFromRequestBody(
 }
 
 export async function getQuadDeleteDataFromRequestBody(
-  enrichedBody: any,
+  enrichedBody: EnrichedBody,
 ): Promise<{ delete: string; where: string }> {
   const resourceUri = enrichedBody['@id'];
   const context = enrichedBody['@context'];

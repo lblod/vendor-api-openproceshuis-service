@@ -6,6 +6,7 @@ import { processContext } from '../context';
 import isUrl from '../util/is-url';
 import isEmail from '../util/is-email';
 import isMaxLength from '../util/is-max-length';
+import { EnrichedBody } from '../types';
 
 export function getSessionUriFromRequest(request: Request): string {
   const HEADER_MU_SESSION_ID = 'mu-session-id';
@@ -42,7 +43,7 @@ export function errorOnResourceUriMissingInRequest(request: Request): string {
   return uri;
 }
 
-export function enrichRequestBodyWithContext(request: Request): any {
+export function enrichRequestBodyWithContext(request: Request): EnrichedBody {
   const enrichedBody = request.body;
   if (!enrichedBody['@context']) {
     enrichedBody['@context'] = processContext;
@@ -61,36 +62,36 @@ const processResourceKeys = () => {
 
   const processKeys = {
     title: {
-      validate: (value: any) =>
+      validate: (value: string) =>
         valueIsStringAndNotEmpty(value) && !isMaxLength(value, 250),
       requiredValueAsString: 'a non-empty string, characters: 250',
     },
     description: {
-      validate: (value: any) =>
+      validate: (value: null | string) =>
         value === null ||
         (valueIsStringAndNotEmpty(value) && !isMaxLength(value, 1500)),
       requiredValueAsString: 'null or a non-empty string, characters: 1500',
     },
     email: {
-      validate: (value: any) =>
+      validate: (value: null | string) =>
         value === null || (valueIsStringAndNotEmpty(value) && isEmail(value)),
       requiredValueAsString: 'null or an email',
     },
     'linked-concept': {
-      validate: (value: any) =>
+      validate: (value: null | string) =>
         value === null || (valueIsStringAndNotEmpty(value) && isUrl(value)),
       requiredValueAsString: 'null or an uri',
     },
     diagrams: {
-      validate: (value: any) => valueIsArrayOfUris(value),
+      validate: (value: Array<string>) => valueIsArrayOfUris(value),
       requiredValueAsString: 'an array of uris',
     },
     attachments: {
-      validate: (value: any) => valueIsArrayOfUris(value),
+      validate: (value: Array<string>) => valueIsArrayOfUris(value),
       requiredValueAsString: 'an array of uris',
     },
     users: {
-      validate: (value: any) => valueIsArrayOfUris(value),
+      validate: (value: Array<string>) => valueIsArrayOfUris(value),
       requiredValueAsString: 'an array of uris',
     },
   };
@@ -98,7 +99,7 @@ const processResourceKeys = () => {
   return {
     keys: processKeys,
     isAllowed: (key: string) => key in processKeys,
-    isValidKeyValue: (key: string, value: any) =>
+    isValidKeyValue: (key: string, value: null | string | Array<string>) =>
       processKeys[key]?.validate(value),
     requiredValueType: (key: string) => processKeys[key]?.requiredValueAsString,
   };
