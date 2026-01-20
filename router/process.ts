@@ -7,30 +7,50 @@ import { authenticateBeforeAction } from '../controller/auth';
 import {
   archiveProcess,
   createNewProcess,
-  createPatchProcessRequest,
-  createPostProcessRequest,
-  createPutProcessRequest,
-  idMustBeInRequestBody,
-  patchProcess,
-  putProcess,
+  updateProcess,
   removeFileFromProcess,
 } from '../controller/process';
 import isUrl from '../util/is-url';
 import { getVendorUriFromSession } from '../controller/impersonate';
+import {
+  enrichRequestBodyWithContext,
+  errorOnCustomContextInRequest,
+  errorOnResourceUriMissingInRequest,
+  validatePatchProcessRequestBody,
+  validatePostProcessRequestBody,
+  validatePutProcessRequestBody,
+} from '../controller/request';
+import {
+  getExpandedRequestBody,
+  getQuadDeleteDataFromRequestBody,
+  getQuadInsertDataFromRequestBody,
+  validateRequestBodyAgainstExpandedLd,
+} from '../controller/context';
 
 export const processRouter = Router();
 
 processRouter.post('/', async (req: Request, res: Response) => {
   try {
-    idMustBeInRequestBody(req);
     const { bestuursEenheid, sessionUri } = await authenticateBeforeAction(req);
 
-    const createRequest = createPostProcessRequest(req);
+    errorOnCustomContextInRequest(req);
+    const resourceUri = errorOnResourceUriMissingInRequest(req);
+    validatePostProcessRequestBody(req);
+
+    const expandedLd = await getExpandedRequestBody(
+      enrichRequestBodyWithContext(req),
+    );
+    await validateRequestBodyAgainstExpandedLd(expandedLd);
+    const requestInsertDataTriples = await getQuadInsertDataFromRequestBody(
+      enrichRequestBodyWithContext(req),
+    );
+
     const vendorUri = await getVendorUriFromSession(sessionUri);
     const processUri = await createNewProcess(
-      createRequest,
+      resourceUri,
       bestuursEenheid,
       vendorUri,
+      requestInsertDataTriples,
     );
 
     return res.status(201).send({ '@id': processUri });
@@ -42,12 +62,30 @@ processRouter.post('/', async (req: Request, res: Response) => {
 
 processRouter.patch('/', async (req: Request, res: Response) => {
   try {
-    idMustBeInRequestBody(req);
     const { sessionUri } = await authenticateBeforeAction(req);
 
-    const patchRequest = createPatchProcessRequest(req);
+    errorOnCustomContextInRequest(req);
+    const resourceUri = errorOnResourceUriMissingInRequest(req);
+    validatePatchProcessRequestBody(req);
+
+    const requestDataAsLd = await getExpandedRequestBody(
+      enrichRequestBodyWithContext(req),
+    );
+    await validateRequestBodyAgainstExpandedLd(requestDataAsLd);
+    const requestInsertDataTriples = await getQuadInsertDataFromRequestBody(
+      enrichRequestBodyWithContext(req),
+    );
+    const requestDeleteDataTriples = await getQuadDeleteDataFromRequestBody(
+      enrichRequestBodyWithContext(req),
+    );
+
     const vendorUri = await getVendorUriFromSession(sessionUri);
-    await patchProcess(patchRequest, vendorUri);
+    await updateProcess(
+      resourceUri,
+      vendorUri,
+      requestInsertDataTriples,
+      requestDeleteDataTriples,
+    );
 
     return res.status(200).send();
   } catch (error) {
@@ -58,12 +96,30 @@ processRouter.patch('/', async (req: Request, res: Response) => {
 
 processRouter.put('/', async (req: Request, res: Response) => {
   try {
-    idMustBeInRequestBody(req);
     const { sessionUri } = await authenticateBeforeAction(req);
 
-    const putRequest = createPutProcessRequest(req);
+    errorOnCustomContextInRequest(req);
+    const resourceUri = errorOnResourceUriMissingInRequest(req);
+    validatePutProcessRequestBody(req);
+
+    const requestDataAsLd = await getExpandedRequestBody(
+      enrichRequestBodyWithContext(req),
+    );
+    await validateRequestBodyAgainstExpandedLd(requestDataAsLd);
+    const requestInsertDataTriples = await getQuadInsertDataFromRequestBody(
+      enrichRequestBodyWithContext(req),
+    );
+    const requestDeleteDataTriples = await getQuadDeleteDataFromRequestBody(
+      enrichRequestBodyWithContext(req),
+    );
+
     const vendorUri = await getVendorUriFromSession(sessionUri);
-    await putProcess(putRequest, vendorUri);
+    await updateProcess(
+      resourceUri,
+      vendorUri,
+      requestInsertDataTriples,
+      requestDeleteDataTriples,
+    );
 
     return res.status(200).send();
   } catch (error) {
@@ -74,8 +130,8 @@ processRouter.put('/', async (req: Request, res: Response) => {
 
 processRouter.delete('/', async (req: Request, res: Response) => {
   try {
-    idMustBeInRequestBody(req);
     const { sessionUri } = await authenticateBeforeAction(req);
+    errorOnResourceUriMissingInRequest(req);
 
     const vendorUri = await getVendorUriFromSession(sessionUri);
     await archiveProcess(req.body['@id'], vendorUri);
@@ -89,7 +145,9 @@ processRouter.delete('/', async (req: Request, res: Response) => {
 
 processRouter.delete('/files', async (req: Request, res: Response) => {
   try {
-    idMustBeInRequestBody(req);
+    await authenticateBeforeAction(req);
+
+    errorOnResourceUriMissingInRequest(req);
     const fileUri = req.body['fileUri'];
     if (!fileUri || fileUri.trim() == '' || !isUrl(fileUri)) {
       throw new HttpError(
@@ -98,7 +156,6 @@ processRouter.delete('/files', async (req: Request, res: Response) => {
         'Property "fileUri" must be set when you want to remove a file from the process.',
       );
     }
-    await authenticateBeforeAction(req);
     await removeFileFromProcess(req.body['@id'], fileUri);
 
     return res.status(204).send();
