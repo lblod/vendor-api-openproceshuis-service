@@ -5,15 +5,11 @@ export async function updateQueryWithCatch(
   queryString: string,
   options = {},
   errorMessage?: string,
+  object?: object,
 ) {
   try {
     await update(queryString, options);
   } catch (error) {
-    console.log(`Sparql query fail with raw error: ${error}`);
-    throw new HttpError(
-      'Something went wrong while executing an update query.',
-      500,
-      errorMessage,
-    );
+    throw new HttpError(error, 500, errorMessage, object);
   }
 }

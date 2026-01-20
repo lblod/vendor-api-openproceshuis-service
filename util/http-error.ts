@@ -1,8 +1,11 @@
+import { log } from './logger';
+
 export class HttpError extends Error {
   constructor(
     message: string,
     public status?: number,
     public description?: string,
+    public object?: object,
   ) {
     super(message);
 
@@ -12,7 +15,10 @@ export class HttpError extends Error {
     if (!this.description) {
       this.description = null;
     }
-    console.log('\n Http error: ', this.message);
+    log.error(message, {
+      description,
+      ...object,
+    });
   }
 
   static caughtErrorJsonResponse(error) {

@@ -12,7 +12,6 @@ export const ORGANIZATION_GRAPH_BASE_URI =
 export async function authenticateBeforeAction(request: Request) {
   const sessionUri = sessionUriFromRequest(request);
   const accountUri = await getAccountForSessionUri(sessionUri);
-
   if (!accountUri) {
     throw new HttpError(
       'No account found for session',
@@ -22,11 +21,18 @@ export async function authenticateBeforeAction(request: Request) {
   }
 
   const bestuursEenheid = await getBestuurseenheidForSession(sessionUri);
+  if (!bestuursEenheid) {
+    throw new HttpError(
+      'No valid bestuurseenheid is linked to the found account.',
+      400,
+      'The bestuurseenheid on the account is invalid.',
+    );
+  }
 
-  return { bestuursEenheid: bestuursEenheid };
+  return { bestuursEenheid: bestuursEenheid, sessionUri: sessionUri };
 }
 
-function sessionUriFromRequest(request: Request) {
+export function sessionUriFromRequest(request: Request) {
   const HEADER_MU_SESSION_ID = 'mu-session-id';
   const sessionUri = request.get(HEADER_MU_SESSION_ID);
 
