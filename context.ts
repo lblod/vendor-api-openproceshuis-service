@@ -1,160 +1,161 @@
 export const processContext = {
   '@version': 1.1,
-  adms: 'http://www.w3.org/ns/adms#',
-  besluit: 'http://data.vlaanderen.be/ns/besluit#',
-  cpsv: 'http://purl.org/vocab/cpsv#',
-  dct: 'http://purl.org/dc/terms/',
-  dpv: 'https://w3id.org/dpv#',
-  ext: 'http://mu.semte.ch/vocabularies/ext/',
-  icr: 'http://lblod.data.gift/vocabularies/informationclassification/',
-  nie: 'http://www.semanticdesktop.org/ontologies/2007/01/19/nie#',
-  nfo: 'http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#',
-  oph: 'http://lblod.data.gift/vocabularies/openproceshuis/',
-  organisatie: 'http://lblod.data.gift/vocabularies/organisatie/',
-  prov: 'http://www.w3.org/ns/prov#',
-  rdfs: 'http://www.w3.org/2000/01/rdf-schema#',
-  schema: 'https://schema.org/',
-  skos: 'http://www.w3.org/2004/02/skos/core#',
-  xsd: 'http://www.w3.org/2001/XMLSchema#',
   type: '@type',
-  Process: 'dpv:Process',
+  Process: 'https://w3id.org/dpv#Process',
   title: {
-    '@id': 'dct:title',
-    '@type': 'xsd:string',
+    '@id': 'http://purl.org/dc/terms/title',
+    '@type': 'http://www.w3.org/2001/XMLSchema#string',
   },
   description: {
-    '@id': 'dct:description',
-    '@type': 'xsd:string',
+    '@id': 'http://purl.org/dc/terms/description',
+    '@type': 'http://www.w3.org/2001/XMLSchema#string',
   },
   email: {
-    '@id': 'schema:email',
-    '@type': 'xsd:string',
+    '@id': 'https://schema.org/email',
+    '@type': 'http://www.w3.org/2001/XMLSchema#string',
   },
   created: {
-    '@id': 'dct:created',
-    '@type': 'xsd:dateTime',
+    '@id': 'http://purl.org/dc/terms/created',
+    '@type': 'http://www.w3.org/2001/XMLSchema#dateTime',
   },
   modified: {
-    '@id': 'dct:modified',
-    '@type': 'xsd:dateTime',
+    '@id': 'http://purl.org/dc/terms/modified',
+    '@type': 'http://www.w3.org/2001/XMLSchema#dateTime',
   },
   status: {
-    '@id': 'adms:status',
+    '@id': 'http://www.w3.org/ns/adms#status',
     '@type': '@id',
   },
   'confidentiality-score': {
-    '@id': 'icr:confidentialityScore',
-    '@type': 'xsd:integer',
+    '@id':
+      'http://lblod.data.gift/vocabularies/informationclassification/confidentialityScore',
+    '@type': 'http://www.w3.org/2001/XMLSchema#integer',
   },
   'integrity-score': {
-    '@id': 'icr:integrityScore',
-    '@type': 'xsd:integer',
+    '@id':
+      'http://lblod.data.gift/vocabularies/informationclassification/integrityScore',
+    '@type': 'http://www.w3.org/2001/XMLSchema#integer',
   },
   'availability-score': {
-    '@id': 'icr:availabilityScore',
-    '@type': 'xsd:integer',
+    '@id':
+      'http://lblod.data.gift/vocabularies/informationclassification/availabilityScore',
+    '@type': 'http://www.w3.org/2001/XMLSchema#integer',
   },
   'contains-personal-data': {
-    '@id': 'icr:containsPersonalData',
-    '@type': 'xsd:boolean',
+    '@id':
+      'http://lblod.data.gift/vocabularies/informationclassification/containsPersonalData',
+    '@type': 'http://www.w3.org/2001/XMLSchema#boolean',
   },
   'contains-professional-data': {
-    '@id': 'icr:containsProfessionalData',
-    '@type': 'xsd:boolean',
+    '@id':
+      'http://lblod.data.gift/vocabularies/informationclassification/containsProfessionalData',
+    '@type': 'http://www.w3.org/2001/XMLSchema#boolean',
   },
   'contains-sensitive-personal-data': {
-    '@id': 'icr:containsSensitivePersonalData',
-    '@type': 'xsd:boolean',
+    '@id':
+      'http://lblod.data.gift/vocabularies/informationclassification/containsSensitivePersonalData',
+    '@type': 'http://www.w3.org/2001/XMLSchema#boolean',
   },
   'additional-information': {
-    '@id': 'icr:additionalInformation',
-    '@type': 'xsd:string',
+    '@id':
+      'http://lblod.data.gift/vocabularies/informationclassification/additionalInformation',
+    '@type': 'http://www.w3.org/2001/XMLSchema#string',
   },
   'has-control-measure': {
-    '@id': 'icr:hasControlMeasure',
+    '@id':
+      'http://lblod.data.gift/vocabularies/informationclassification/hasControlMeasure',
     '@type': '@id',
   },
   'is-blueprint': {
-    '@id': 'icr:isBlueprint',
-    '@type': 'xsd:boolean',
+    '@id':
+      'http://lblod.data.gift/vocabularies/informationclassification/isBlueprint',
+    '@type': 'http://www.w3.org/2001/XMLSchema#boolean',
   },
   publisher: {
-    '@id': 'dct:publisher',
+    '@id': 'http://purl.org/dc/terms/publisher',
     '@type': '@id',
     '@context': {
-      Bestuurseenheid: 'besluit:Bestuurseenheid',
+      Bestuurseenheid: 'http://data.vlaanderen.be/ns/besluit#Bestuurseenheid',
     },
   },
   'process-statistics': {
-    '@id': 'ext:hasStatistics',
+    '@id': 'http://mu.semte.ch/vocabularies/ext/hasStatistics',
     '@type': '@id',
   },
   'linked-concept': {
-    '@id': 'dct:source',
+    '@id': 'http://purl.org/dc/terms/source',
     '@type': '@id',
     '@context': {
-      ConceptueelProces: 'oph:ConceptueelProces',
+      ConceptueelProces:
+        'http://lblod.data.gift/vocabularies/openproceshuis/ConceptueelProces',
     },
   },
   diagrams: {
-    '@reverse': 'nie:isPartOf',
+    '@reverse':
+      'http://www.semanticdesktop.org/ontologies/2007/01/19/nie#isPartOf',
     '@container': '@set',
     '@type': '@id',
     '@context': {
-      FileDataObject: 'nfo:FileDataObject',
+      FileDataObject:
+        'http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#FileDataObject',
     },
   },
   attachments: {
-    '@reverse': 'nie:isPartOf',
+    '@reverse':
+      'http://www.semanticdesktop.org/ontologies/2007/01/19/nie#isPartOf',
     '@container': '@set',
     '@type': '@id',
     '@context': {
-      FileDataObject: 'nfo:FileDataObject',
+      FileDataObject:
+        'http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#FileDataObject',
     },
   },
   'ipdc-products': {
-    '@reverse': 'cpsv:follows',
+    '@reverse': 'http://purl.org/vocab/cpsv#follows',
     '@container': '@set',
   },
   'relevant-administrative-units': {
-    '@id': 'icr:isRelevantForAdministrativeUnit',
+    '@id':
+      'http://lblod.data.gift/vocabularies/informationclassification/isRelevantForAdministrativeUnit',
     '@type': '@id',
     '@container': '@set',
     '@context': {
       BestuurseenheidClassificatieCode:
-        'organisatie:BestuurseenheidClassificatieCode',
+        'http://lblod.data.gift/vocabularies/organisatie/BestuurseenheidClassificatieCode',
     },
   },
   'information-assets': {
-    '@id': 'icr:hasInformationAsset',
+    '@id':
+      'http://lblod.data.gift/vocabularies/informationclassification/hasInformationAsset',
     '@type': '@id',
     '@container': '@set',
     '@context': {
-      Concept: 'skos:Concept',
+      Concept: 'http://www.w3.org/2004/02/skos/core#Concept',
     },
   },
   'linked-blueprints': {
-    '@id': 'prov:wasInfluencedBy',
+    '@id': 'http://www.w3.org/ns/prov#wasInfluencedBy',
     '@type': '@id',
     '@container': '@set',
     '@context': {
-      Process: 'dpv:Process',
+      Process: 'https://w3id.org/dpv#Process',
     },
   },
   users: {
-    '@id': 'prov:usedBy',
+    '@id': 'http://www.w3.org/ns/prov#usedBy',
     '@type': '@id',
     '@container': '@set',
     '@context': {
-      Bestuurseenheid: 'besluit:Bestuurseenheid',
+      Bestuurseenheid: 'http://data.vlaanderen.be/ns/besluit#Bestuurseenheid',
     },
   },
   links: {
-    '@id': 'rdfs:seeAlso',
+    '@id': 'http://www.w3.org/2000/01/rdf-schema#seeAlso',
     '@type': '@id',
     '@container': '@set',
     '@context': {
-      Bookmark: 'nfo:Bookmark',
+      Bookmark:
+        'http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#Bookmark',
     },
   },
 };

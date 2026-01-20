@@ -1,13 +1,5 @@
-import { Request } from 'express';
-
 import { HttpError } from '../util/http-error';
-import isUrl from '../util/is-url';
-import {
-  BestuursEenheid,
-  CreateProcessRequest,
-  PatchProcessRequest,
-  PutProcessRequest,
-} from '../types';
+import { BestuursEenheid } from '../types';
 import {
   sparqlEscapeUri,
   query,
@@ -19,356 +11,106 @@ import { updateQueryWithCatch } from '../util/sparql-with-try-catch';
 import { log } from '../util/logger';
 
 export async function createNewProcess(
-  process: CreateProcessRequest,
+  processUri: string,
   bestuurseenheid: BestuursEenheid,
   vendorUri: string,
+  requestInsertDataTriples: string,
 ): Promise<string> {
-  if (await isExistingProcessUri(process['@id'])) {
+  if (await isExistingProcessUri(processUri)) {
     throw new HttpError(
       'Process with uri already exists.',
       409,
       'The given uri for the process already exists in the database.',
     );
   }
-  let description = '';
-  let linkedInventoryProcess = '';
-  let users = '';
-  let diagrams = '';
-  let attachments = '';
-
-  if (process.description) {
-    description = `${sparqlEscapeUri(process['@id'])} dct:description ${sparqlEscapeString(process.description)} .`;
-  }
-  if (process.linkedInventoryProcess) {
-    linkedInventoryProcess = `${sparqlEscapeUri(process['@id'])} dct:source ${sparqlEscapeUri(process.linkedInventoryProcess)} .`;
-  }
-  if (process.users) {
-    users = process.users
-      .map(
-        (uri) =>
-          `${sparqlEscapeUri(process['@id'])} prov:usedBy ${sparqlEscapeUri(uri)} .`,
-      )
-      .join('\n');
-  }
-  if (process.diagrams) {
-    diagrams = process.diagrams
-      .map(
-        (uri) =>
-          `${sparqlEscapeUri(uri)} nie:isPartOf ${sparqlEscapeUri(process['@id'])} .`,
-      )
-      .join('\n');
-  }
-  if (process.attachments) {
-    attachments = process.attachments
-      .map(
-        (uri) =>
-          `${sparqlEscapeUri(uri)} nie:isPartOf ${sparqlEscapeUri(process['@id'])}.`,
-      )
-      .join('\n');
-  }
-
   await updateQueryWithCatch(
     `
-    PREFIX dpv: <https://w3id.org/dpv#>
     PREFIX dct: <http://purl.org/dc/terms/>
-    PREFIX prov: <http://www.w3.org/ns/prov#>
-    PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
     INSERT DATA {
-        ${sparqlEscapeUri(process['@id'])} a dpv:Process .
-        ${sparqlEscapeUri(process['@id'])} mu:uuid ${sparqlEscapeString(uuid())}.
-        ${sparqlEscapeUri(process['@id'])} dct:title ${sparqlEscapeString(process.title)} .
-        ${sparqlEscapeUri(process['@id'])} dct:publisher ${sparqlEscapeUri(bestuurseenheid.uri)} .
-        ${sparqlEscapeUri(process['@id'])} dct:creator ${sparqlEscapeUri(vendorUri)} .
-        ${sparqlEscapeUri(process['@id'])} dct:contributor ${sparqlEscapeUri(vendorUri)} .
-        ${sparqlEscapeUri(process['@id'])} dct:created ${sparqlEscapeDateTime(new Date())} .
-        ${description}
-        ${linkedInventoryProcess}
-        ${users}
-        ${diagrams}
-        ${attachments}
+      ${requestInsertDataTriples}
+      ${sparqlEscapeUri(processUri)} mu:uuid ${sparqlEscapeString(uuid())}.
+      ${sparqlEscapeUri(processUri)} dct:publisher ${sparqlEscapeUri(bestuurseenheid.uri)} .
+      ${sparqlEscapeUri(processUri)} dct:creator ${sparqlEscapeUri(vendorUri)} .
+      ${sparqlEscapeUri(processUri)} dct:contributor ${sparqlEscapeUri(vendorUri)} .
+      ${sparqlEscapeUri(processUri)} dct:created ${sparqlEscapeDateTime(new Date())} .
     }  
   `,
     { sudo: false },
     'Sparql query for creating process resource failed.',
     {
-      process: process['@id'],
+      process: processUri,
     },
   );
   log.info('Added process to bestuurseenheid.', {
-    process: process['@id'],
+    process: processUri,
     bestuurseenheid: bestuurseenheid.uri,
   });
 
-  return process['@id'];
+  return processUri;
 }
 
-export function createPostProcessRequest(
-  request: Request,
-): CreateProcessRequest {
-  validateRequestValues(request, { post: true });
-  const {
-    title = null,
-    description = null,
-    email = null,
-    users = null,
-    diagrams = null,
-    attachments = null,
-  } = request.body;
-
-  return {
-    '@id': request.body['@id'],
-    title: title,
-    description: description,
-    contact: email,
-    linkedInventoryProcess: request.body['linked-concept'] ?? null,
-    users,
-    diagrams,
-    attachments,
-  };
-}
-
-export async function patchProcess(
-  process: PatchProcessRequest,
+export async function updateProcess(
+  processUri: string,
   vendorUri: string,
+  requestInsertDataTriples: string,
+  requestDeleteDataTriples: { delete: string; where: string },
 ): Promise<void> {
-  if (!(await isExistingProcessUri(process['@id']))) {
+  if (!(await isExistingProcessUri(processUri))) {
     throw new HttpError(
       'Process with uri not found.',
       404,
       'The given uri for the process was not found. Does it exist? Do you have rights to update the process?',
     );
   }
-  let title = '';
-  let description = '';
-  let contact = '';
-  let linkedInventoryProcess = '';
-  let users = '';
-  let diagrams = '';
-  let attachments = '';
-  const deleteQueryValues = [];
 
-  if ('title' in process) {
-    deleteQueryValues.push('?process dct:title ?title .');
-    if (process.title && process.title.trim() !== '') {
-      title = `?process dct:title ${sparqlEscapeString(process.title)} .`;
-    }
-  }
-  if ('description' in process) {
-    deleteQueryValues.push('?process dct:description ?description .');
-    if (process.description && process.description.trim() !== '') {
-      description = `?process dct:description ${sparqlEscapeString(process.description)} .`;
-    }
-  }
-  if ('email' in process) {
-    deleteQueryValues.push('?process schema:email ?contact .');
-    if (process.email) {
-      contact = `?process schema:email ${sparqlEscapeString(process.email)} .`;
-    }
-  }
-  if ('linked-concept' in process) {
-    deleteQueryValues.push('?process dct:source ?source .');
-    if (process.linkedInventoryProcess) {
-      linkedInventoryProcess = `?process dct:source ${sparqlEscapeUri(process['linked-concept'])} .`;
-    }
-  }
-  if ('users' in process) {
-    deleteQueryValues.push('?process prov:usedBy ?users .');
-    if (process.users.length >= 1) {
-      users = process.users
-        .map((uri) => `?process prov:usedBy ${sparqlEscapeUri(uri)} .`)
-        .join('\n');
-    }
-  }
-  if ('diagrams' in process) {
-    deleteQueryValues.push('?diagrams nie:isPartOf ?process .');
-    if (process.diagrams.length >= 1) {
-      diagrams = process.diagrams
-        .map((uri) => `${sparqlEscapeUri(uri)} nie:isPartOf ?process .`)
-        .join('\n');
-    }
-  }
-  if ('attachments' in process) {
-    deleteQueryValues.push('?attachments nie:isPartOf ?process .');
-    if (process.attachments.length >= 1) {
-      attachments = process.attachments
-        .map((uri) => `${sparqlEscapeUri(uri)} nie:isPartOf ?process .`)
-        .join('\n');
-    }
-  }
   await updateQueryWithCatch(
     `
     PREFIX dpv: <https://w3id.org/dpv#>
-    PREFIX dct: <http://purl.org/dc/terms/>
-    PREFIX prov: <http://www.w3.org/ns/prov#>
-    PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
-    PREFIX schema: <https://schema.org/>
     DELETE {
-      ${deleteQueryValues.join('\n')}
-    }
-    INSERT {
-      ${title}
-      ${description}
-      ${contact}
-      ${linkedInventoryProcess}
-      ${users}
-      ${diagrams}
-      ${attachments}
-      ?process dct:contributor ${sparqlEscapeUri(vendorUri)} .
+      ${requestDeleteDataTriples.delete}
     }
     WHERE {
       GRAPH ?g {
-        VALUES ?process { ${sparqlEscapeUri(process['@id'])} }
+        VALUES ?process { ${sparqlEscapeUri(processUri)} }
         ?process a dpv:Process .
-        ${deleteQueryValues.map((value) => `OPTIONAL { ${value} }`).join('\n')}
+        ${requestDeleteDataTriples.where}
       }
     }  
   `,
     { sudo: false },
     'Sparql query for updating process resource properties failed.',
     {
-      process: process['@id'],
+      process: processUri,
     },
   );
-  log.info('Updated properties of process', {
-    properties: Object.keys(process),
+  log.debug('Removed properties of process', {
+    triples: requestDeleteDataTriples,
   });
-}
-
-export function createPatchProcessRequest(
-  request: Request,
-): PatchProcessRequest {
-  validateRequestValues(request, { patch: true });
-
-  const dataToPatch = {
-    '@id': request.body['@id'],
-  };
-
-  Object.keys(request.body).map((key) => {
-    dataToPatch[key] = request.body[key];
-  });
-
-  return dataToPatch;
-}
-
-export async function putProcess(
-  process: PutProcessRequest,
-  vendorUri: string,
-): Promise<void> {
-  if (!(await isExistingProcessUri(process['@id']))) {
-    throw new HttpError(
-      'Process with uri not found.',
-      404,
-      'The given uri for the process was not found. Does it exist? Do you have rights to update the process?',
-    );
-  }
-
-  const valuesStatements = [];
-  const whereQueryValues = [
-    '?process dct:title ?title .',
-    '?process dct:description ?description .',
-    '?process schema:email ?contact .',
-    '?process dct:source ?source .',
-    '?process prov:usedBy ?users .',
-    '?diagrams nie:isPartOf ?process .',
-    '?attachments nie:isPartOf ?process .',
-  ];
-  let usersQuery = '';
-  let diagramsQuery = '';
-  let attachmentsQuery = '';
-  if (process.users.length >= 1) {
-    valuesStatements.push(
-      `VALUES ?newUsers { ${process.users.map((userUri) => sparqlEscapeUri(userUri)).join('\n')} }`,
-    );
-    usersQuery = '?process prov:usedBy ?newUsers .';
-  }
-  if (process.diagrams.length >= 1) {
-    valuesStatements.push(
-      `VALUES ?newDiagrams { ${process.diagrams.map((diagramUri) => sparqlEscapeUri(diagramUri)).join('\n')} }`,
-    );
-
-    diagramsQuery = '?newDiagrams nie:isPartOf ?process .';
-  }
-  if (process.attachments.length >= 1) {
-    valuesStatements.push(
-      `VALUES ?newAttachments { ${process.attachments.map((attachmentUri) => sparqlEscapeUri(attachmentUri)).join('\n')} }`,
-    );
-    attachmentsQuery = '?newAttachments nie:isPartOf ?process .';
-  }
   await updateQueryWithCatch(
     `
     PREFIX dpv: <https://w3id.org/dpv#>
     PREFIX dct: <http://purl.org/dc/terms/>
-    PREFIX prov: <http://www.w3.org/ns/prov#>
-    PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
-    PREFIX schema: <https://schema.org/>
-    DELETE {
-      ${whereQueryValues.join('\n')}
-    }
     INSERT {
-      ?process dct:title ${sparqlEscapeString(process.title)} .
-      ?process dct:description ${sparqlEscapeString(process.description)}.
-      ?process schema:email ${sparqlEscapeString(process.contact)}.
-      ?process dct:source ${sparqlEscapeUri(process.linkedInventoryProcess)}.
-      ${usersQuery}
-      ${diagramsQuery}
-      ${attachmentsQuery}
+      ${requestInsertDataTriples}
       ?process dct:contributor ${sparqlEscapeUri(vendorUri)} .
     }
     WHERE {
       GRAPH ?g {
-        VALUES ?process { ${sparqlEscapeUri(process['@id'])} }
+        VALUES ?process { ${sparqlEscapeUri(processUri)} }
         ?process a dpv:Process .
-        ${valuesStatements.join('\n')}
-        ${whereQueryValues.map((value) => `OPTIONAL { ${value} }`).join('\n')}
       }
     }  
   `,
     { sudo: false },
-    'Sparql query for replacing process resource properties failed.',
+    'Sparql query for updating process resource properties failed.',
     {
-      process: process['@id'],
+      process: processUri,
     },
   );
-  log.info('Replaced properties of proces with new values.', {
-    process: process['@id'],
+  log.debug('Updated properties of process', {
+    triples: requestInsertDataTriples,
   });
-}
-
-export function createPutProcessRequest(request: Request): PutProcessRequest {
-  const allProcessKeys = [
-    '@id',
-    'title',
-    'description',
-    'email',
-    'linked-concept',
-    'users',
-    'diagrams',
-    'attachments',
-  ];
-  const isContainingAllKeys = Object.keys(request.body)
-    .filter((key) => ['@context'].includes(key))
-    .every((key) => allProcessKeys.includes(key));
-
-  if (!isContainingAllKeys) {
-    throw new HttpError(
-      'Not all keys are provided or have a value.',
-      400,
-      `Make sure to add all process properties in the body with there value when doing a PUT request. (${allProcessKeys.join(', ')})`,
-    );
-  }
-  validateRequestValues(request, { put: true });
-
-  return {
-    '@id': request.body['@id'],
-    title: request.body['title'],
-    contact: request.body['email'],
-    description: request.body['description'],
-    linkedInventoryProcess: request.body['linked-concept'],
-    users: request.body['users'],
-    diagrams: request.body['diagrams'],
-    attachments: request.body['attachments'],
-  };
 }
 
 export async function archiveProcess(
@@ -462,122 +204,6 @@ export async function removeFileFromProcess(
     process: processUri,
     file: fileUri,
   });
-}
-
-function validateRequestValues(
-  request: Request,
-  requestType: { post?: boolean; patch?: boolean; put?: boolean },
-) {
-  const id = request.body['@id'];
-  const linkedInventoryProcess = request.body['linked-concept'] ?? null;
-  const {
-    title = null,
-    email = null,
-    description = null,
-    users = null,
-    diagrams = null,
-    attachments = null,
-  } = request.body;
-
-  if (!id) {
-    throw new HttpError(
-      'Property "@id" is required in the body.',
-      400,
-      'The "@id" property must always be in the request body.',
-    );
-  }
-  if (requestType.post && !title) {
-    throw new HttpError(
-      'Property "title" is required in the body.',
-      400,
-      'When creating a process the "title" property must be in the request body.',
-    );
-  }
-  if (requestType.put && typeof email == 'string' && email.trim() == '') {
-    throw new HttpError(
-      'Property "email" cannot be empty.',
-      400,
-      'When replacing a process the "email" property must be in the request body.',
-    );
-  }
-  if (
-    requestType.put &&
-    typeof description == 'string' &&
-    description.trim() == ''
-  ) {
-    throw new HttpError(
-      'Property "description" cannot be empty.',
-      400,
-      'When replacing a process the "description" property must be in the request body.',
-    );
-  }
-  if (
-    (requestType.patch || requestType.put) &&
-    title &&
-    typeof title == 'string' &&
-    title.trim() == ''
-  ) {
-    throw new HttpError(
-      'Property "title" cannot be empty',
-      400,
-      'The "title" of the process should be an identifier for frontend applications, do not leave this empty.',
-    );
-  }
-  if (
-    typeof linkedInventoryProcess == 'string' &&
-    !isUrl(linkedInventoryProcess)
-  ) {
-    throw new HttpError(
-      'Property "linked-concept" must be an URI',
-      400,
-      'The "linked-concept" property must be the URI of the inventory process subject.',
-    );
-  }
-  if (typeof users !== 'object' && !Array.isArray(users)) {
-    throw new HttpError(
-      'Property "users" must be an array',
-      400,
-      'The "user" property must be an array of administrative unit uris so we can see who is working with this process.',
-    );
-  }
-  if (Array.isArray(users) && !users.every((uri: string) => isUrl(uri))) {
-    throw new HttpError(
-      'Values of "users" must all be URIs',
-      400,
-      'The "user" property must be an array of administrative unit uris. Example: ["http://data.lblod.info/id/bestuurseenheden/abc"]',
-    );
-  }
-  if (typeof diagrams !== 'object' && !Array.isArray(diagrams)) {
-    throw new HttpError(
-      'Property "diagrams" must be an array',
-      400,
-      'The "diagrams" property must be an array of file uris.',
-    );
-  }
-  if (Array.isArray(diagrams) && !diagrams.every((uri: string) => isUrl(uri))) {
-    throw new HttpError(
-      'Values of "diagrams" must all be URIs',
-      400,
-      'The "diagrams" property must be an array of file uris. Example: ["http://data.lblod.info/files/abc"]',
-    );
-  }
-  if (typeof attachments !== 'object' && !Array.isArray(attachments)) {
-    throw new HttpError(
-      'Property "attachments" must be an array',
-      400,
-      'The "attachments" property must be an array of file uris.',
-    );
-  }
-  if (
-    Array.isArray(attachments) &&
-    !attachments.every((uri: string) => isUrl(uri))
-  ) {
-    throw new HttpError(
-      'Values of "attachments" must all be URIs',
-      400,
-      'The "attachments" property must be an array of file uris. Example: ["http://data.lblod.info/files/abc"]',
-    );
-  }
 }
 
 async function isExistingProcessUri(processUri: string): Promise<boolean> {

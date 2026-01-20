@@ -1,20 +1,18 @@
 import jsonld from 'jsonld';
 import { sparqlEscapeUri, query } from 'mu';
-import { Request } from 'express';
 
 import { log } from '../util/logger';
 import { HttpError } from '../util/http-error';
 import isUrl from '../util/is-url';
-import { enrichRequestBodyWithContext } from './request';
+import { EnrichedBody } from '../types';
 
-export async function validateRequestBodyAgainstContext(
-  req: Request,
+export async function validateRequestBodyAgainstExpandedLd(
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  expandedLd: any,
 ): Promise<void> {
-  const enrichedBody = enrichRequestBodyWithContext(req);
-  const ldMainNode = await requestBodyToLd(enrichedBody);
   const resource = {
-    uri: ldMainNode['@id'],
-    typeUri: ldMainNode['@type'][0],
+    uri: expandedLd['@id'],
+    typeUri: expandedLd['@type'][0],
   };
   const foundTypeForResourceUri = await getResourceTypeUri(resource.uri);
   if (foundTypeForResourceUri && foundTypeForResourceUri !== resource.typeUri) {
@@ -29,11 +27,11 @@ export async function validateRequestBodyAgainstContext(
       },
     );
   }
-  Object.keys(ldMainNode).map((key) => {
+  Object.keys(expandedLd).map((key) => {
     if (['@id', '@reverse', '@type'].includes(key)) {
       return;
     }
-    ldMainNode[key].map(
+    expandedLd[key].map(
       (prop: { '@id'?: string; '@type'?: string; '@value'?: string }) => {
         const uriObjectValue = prop['@id'];
         if (uriObjectValue && !isUrl(uriObjectValue)) {
@@ -78,7 +76,7 @@ export async function validateRequestBodyAgainstContext(
   });
 }
 
-function prepareForExpansion(data: any) {
+function prepareForExpansion(data: EnrichedBody) {
   const result = { ...data };
   Object.keys(result).forEach((key) => {
     const value = result[key];
@@ -89,7 +87,9 @@ function prepareForExpansion(data: any) {
   return result;
 }
 
-async function requestBodyToLd(enrichedBody: object): Promise<object> {
+export async function getExpandedRequestBody(
+  enrichedBody: EnrichedBody,
+): Promise<object> {
   const context = enrichedBody['@context'];
   delete enrichedBody['@context'];
   const cleanData = prepareForExpansion(enrichedBody);
@@ -112,6 +112,62 @@ async function requestBodyToLd(enrichedBody: object): Promise<object> {
   } catch (error) {
     log.debug('Validation Failed.', error);
   }
+}
+
+export async function getQuadInsertDataFromRequestBody(
+  enrichedBody: EnrichedBody,
+): Promise<string> {
+  const context = enrichedBody['@context'];
+  delete enrichedBody['@context'];
+  const cleanData = prepareForExpansion(enrichedBody);
+  try {
+    return await jsonld.toRDF(
+      {
+        ...cleanData,
+        '@context': context,
+      },
+      { format: 'application/n-quads' },
+    );
+  } catch (error) {
+    throw new HttpError(
+      'Could not create quads for request body data.',
+      500,
+      'Could not created quads to use in insert data query.',
+    );
+  }
+}
+
+export async function getQuadDeleteDataFromRequestBody(
+  enrichedBody: EnrichedBody,
+): Promise<{ delete: string; where: string }> {
+  const resourceUri = enrichedBody['@id'];
+  const context = enrichedBody['@context'];
+  const deleteTriplesArray = [];
+  const whereDeleteTriplesArray = [];
+  Object.keys(enrichedBody).map((key) => {
+    const keysToIgnore = ['@id', '@context', 'type'];
+    if (keysToIgnore.includes(key)) {
+      return;
+    }
+
+    const safeQueryKey = key.replace(/[^a-zA-Z0-9]/g, '');
+    if (context[key]?.['@reverse']) {
+      const predicate = context[key]?.['@reverse'];
+      const tripleString = `?${safeQueryKey} ${sparqlEscapeUri(predicate)} ${sparqlEscapeUri(resourceUri)} .`;
+      deleteTriplesArray.push(tripleString);
+      whereDeleteTriplesArray.push(`OPTIONAL { ${tripleString} }`);
+    } else {
+      const predicate = context[key]?.['@id'];
+      const tripleString = `${sparqlEscapeUri(resourceUri)} ${sparqlEscapeUri(predicate)} ?${safeQueryKey} .`;
+      deleteTriplesArray.push(tripleString);
+      whereDeleteTriplesArray.push(`OPTIONAL { ${tripleString} }`);
+    }
+  });
+
+  return {
+    delete: deleteTriplesArray.join('\n'),
+    where: whereDeleteTriplesArray.join('\n'),
+  };
 }
 
 async function getResourceTypeUri(
