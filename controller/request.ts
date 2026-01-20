@@ -25,6 +25,21 @@ export function getSessionUriFromRequest(request: Request): string {
   return sessionUri;
 }
 
+export function errorOnCustomContextInRequest(request: Request): void {
+  const context = request.body['@context'];
+
+  if (context) {
+    throw new HttpError(
+      'Passing on your own context is not supported.',
+      400,
+      'Found "@context" in the request but the api does not support this. Only the internal json-ld context can be used.',
+    );
+  }
+  log.debug('Custom context is not allowed', {
+    context: context,
+  });
+}
+
 export function errorOnResourceUriMissingInRequest(request: Request): string {
   const uri = request.body['@id'];
   const isAvailable = uri && typeof uri == 'string' && uri.trim() !== '';

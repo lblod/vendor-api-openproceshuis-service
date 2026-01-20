@@ -14,6 +14,7 @@ import isUrl from '../util/is-url';
 import { getVendorUriFromSession } from '../controller/impersonate';
 import {
   enrichRequestBodyWithContext,
+  errorOnCustomContextInRequest,
   errorOnResourceUriMissingInRequest,
   validatePatchProcessRequestBody,
   validatePostProcessRequestBody,
@@ -32,6 +33,7 @@ processRouter.post('/', async (req: Request, res: Response) => {
   try {
     const { bestuursEenheid, sessionUri } = await authenticateBeforeAction(req);
 
+    errorOnCustomContextInRequest(req);
     const resourceUri = errorOnResourceUriMissingInRequest(req);
     validatePostProcessRequestBody(req);
 
@@ -62,6 +64,7 @@ processRouter.patch('/', async (req: Request, res: Response) => {
   try {
     const { sessionUri } = await authenticateBeforeAction(req);
 
+    errorOnCustomContextInRequest(req);
     const resourceUri = errorOnResourceUriMissingInRequest(req);
     validatePatchProcessRequestBody(req);
 
@@ -95,6 +98,7 @@ processRouter.put('/', async (req: Request, res: Response) => {
   try {
     const { sessionUri } = await authenticateBeforeAction(req);
 
+    errorOnCustomContextInRequest(req);
     const resourceUri = errorOnResourceUriMissingInRequest(req);
     validatePutProcessRequestBody(req);
 
