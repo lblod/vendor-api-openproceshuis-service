@@ -17,7 +17,7 @@ export async function authenticateBeforeAction(request: Request) {
     throw new HttpError(
       'No account found for session',
       401,
-      'The used session is not active or linked to a known account.',
+      'The user session is not active or linked to a known account.',
     );
   }
 

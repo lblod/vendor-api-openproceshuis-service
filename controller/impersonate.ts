@@ -29,6 +29,7 @@ export async function impersonateAsBestuurseenheid(
     DELETE {
       GRAPH ${sparqlEscapeUri(SESSION_GRAPH_URI)} {
         ${sparqlEscapeUri(sessionUri)} ext:sessionGroup ?sessionGroup .
+        ${sparqlEscapeUri(sessionUri)} ext:originalSessionGroup ?originalSessionGroup .
       }
     }
     INSERT {
