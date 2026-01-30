@@ -1,3 +1,9 @@
+# V0.0.2
+
+#### :rocket: Enhancement
+
+- [#8](https://github.com/lblod/app-openproceshuis/pull/8) OPH-894 | Limit impersonation to vendors [@JonasVanHoof](https://github.com/JonasVanHoof)
+
 # V0.0.1
 
 #### :rocket: Enhancement

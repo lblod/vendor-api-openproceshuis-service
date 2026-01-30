@@ -1,6 +1,6 @@
 {
   "name": "vendor-api-openproceshuis",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "type": "module",
   "description": "Service to handle backend business logic integrating verdor created processes.",
   "main": "app.js",
