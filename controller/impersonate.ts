@@ -1,7 +1,8 @@
 import { sparqlEscapeUri, query } from 'mu';
 import { updateQueryWithCatch } from '../util/sparql-with-try-catch';
-import { SESSION_GRAPH_URI } from './auth';
+import { isCurrentSessionOfAVendor, SESSION_GRAPH_URI } from './auth';
 import { log } from '../util/logger';
+import { HttpError } from '../util/http-error';
 
 export async function isValidBestuurseenheid(bestuurseenheidUri: string) {
   const sparqlResult = await query(`
@@ -28,6 +29,7 @@ export async function impersonateAsBestuurseenheid(
     DELETE {
       GRAPH ${sparqlEscapeUri(SESSION_GRAPH_URI)} {
         ${sparqlEscapeUri(sessionUri)} ext:sessionGroup ?sessionGroup .
+        ${sparqlEscapeUri(sessionUri)} ext:originalSessionGroup ?originalSessionGroup .
       }
     }
     INSERT {
@@ -51,6 +53,14 @@ export async function impersonateAsBestuurseenheid(
   log.info('Removed current impersonation from session', {
     session: sessionUri,
   });
+  const isSessionOfVendor = await isCurrentSessionOfAVendor(sessionUri);
+  if (!isSessionOfVendor) {
+    throw new HttpError(
+      'Only vendors can impersonate.',
+      403,
+      'You cannot use this endpoint when you are not a vendor.',
+    );
+  }
   await updateQueryWithCatch(
     `
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>

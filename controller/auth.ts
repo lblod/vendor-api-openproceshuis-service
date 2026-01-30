@@ -17,7 +17,7 @@ export async function authenticateBeforeAction(request: Request) {
     throw new HttpError(
       'No account found for session',
       401,
-      'The used session is not active or linked to a known account.',
+      'The user session is not active or linked to a known account.',
     );
   }
 
@@ -31,6 +31,29 @@ export async function authenticateBeforeAction(request: Request) {
   }
 
   return { bestuursEenheid: bestuursEenheid, sessionUri: sessionUri };
+}
+
+export async function isCurrentSessionOfAVendor(sessionUri: string) {
+  const allowedClassifications = [
+    'http://data.vlaanderen.be/id/concept/BestuurseenheidClassificatieCode/c4483583-f9fe-4d2f-96f4-47ddb3440d71', // Leverancier
+  ];
+  const sudoResult = await query(
+    `
+    PREFIX ext: <http://mu.semte.ch/vocabularies/ext/>
+    PREFIX org: <http://www.w3.org/ns/org#>
+
+    ASk {
+      GRAPH ${sparqlEscapeUri(SESSION_GRAPH_URI)} {
+        ${sparqlEscapeUri(sessionUri)} ext:sessionGroup ?bestuurseenheid .
+      }
+      ?bestuurseenheid org:classification  ?classification.
+      FILTER(?classification IN(${allowedClassifications.map((uri) => sparqlEscapeUri(uri)).join(',')}))
+    }
+    `,
+    { sudo: true },
+  );
+
+  return Boolean(sudoResult.boolean);
 }
 
 async function getAccountForSessionUri(sessionUri: string) {
