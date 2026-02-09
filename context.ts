@@ -26,46 +26,6 @@ export const processContext = {
     '@id': 'http://www.w3.org/ns/adms#status',
     '@type': '@id',
   },
-  'confidentiality-score': {
-    '@id':
-      'http://lblod.data.gift/vocabularies/informationclassification/confidentialityScore',
-    '@type': 'http://www.w3.org/2001/XMLSchema#integer',
-  },
-  'integrity-score': {
-    '@id':
-      'http://lblod.data.gift/vocabularies/informationclassification/integrityScore',
-    '@type': 'http://www.w3.org/2001/XMLSchema#integer',
-  },
-  'availability-score': {
-    '@id':
-      'http://lblod.data.gift/vocabularies/informationclassification/availabilityScore',
-    '@type': 'http://www.w3.org/2001/XMLSchema#integer',
-  },
-  'contains-personal-data': {
-    '@id':
-      'http://lblod.data.gift/vocabularies/informationclassification/containsPersonalData',
-    '@type': 'http://www.w3.org/2001/XMLSchema#boolean',
-  },
-  'contains-professional-data': {
-    '@id':
-      'http://lblod.data.gift/vocabularies/informationclassification/containsProfessionalData',
-    '@type': 'http://www.w3.org/2001/XMLSchema#boolean',
-  },
-  'contains-sensitive-personal-data': {
-    '@id':
-      'http://lblod.data.gift/vocabularies/informationclassification/containsSensitivePersonalData',
-    '@type': 'http://www.w3.org/2001/XMLSchema#boolean',
-  },
-  'additional-information': {
-    '@id':
-      'http://lblod.data.gift/vocabularies/informationclassification/additionalInformation',
-    '@type': 'http://www.w3.org/2001/XMLSchema#string',
-  },
-  'has-control-measure': {
-    '@id':
-      'http://lblod.data.gift/vocabularies/informationclassification/hasControlMeasure',
-    '@type': '@id',
-  },
   'is-blueprint': {
     '@id':
       'http://lblod.data.gift/vocabularies/informationclassification/isBlueprint',
@@ -77,10 +37,6 @@ export const processContext = {
     '@context': {
       Bestuurseenheid: 'http://data.vlaanderen.be/ns/besluit#Bestuurseenheid',
     },
-  },
-  'process-statistics': {
-    '@id': 'http://mu.semte.ch/vocabularies/ext/hasStatistics',
-    '@type': '@id',
   },
   'linked-concept': {
     '@id': 'http://purl.org/dc/terms/source',
