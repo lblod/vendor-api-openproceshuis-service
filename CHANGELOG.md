@@ -1,3 +1,9 @@
+# V0.0.3
+
+#### :rocket: Enhancement
+
+- [#9](https://github.com/lblod/app-openproceshuis/pull/9) OPH-915 | Remove ICR properties from process [@JonasVanHoof](https://github.com/JonasVanHoof)
+
 # V0.0.2
 
 #### :rocket: Enhancement
