@@ -4,11 +4,19 @@ import { Request } from 'express';
 import { HttpError } from '../util/http-error';
 import { BestuursEenheid } from '../types';
 import { getSessionUriFromRequest } from './request';
+import { log } from '../util/logger';
 
 export const SESSION_GRAPH_URI =
   process.env.SESSION_GRAPH || 'http://mu.semte.ch/graphs/sessions';
 export const ORGANIZATION_GRAPH_BASE_URI =
   'http://mu.semte.ch/graphs/organizations/';
+
+export async function hasValidSession(request: Request) {
+  const sessionUri = getSessionUriFromRequest(request);
+  const accountUri = await getAccountForSessionUri(sessionUri);
+
+  return Boolean(accountUri);
+}
 
 export async function authenticateBeforeAction(request: Request) {
   const sessionUri = getSessionUriFromRequest(request);
@@ -76,7 +84,10 @@ async function getAccountForSessionUri(sessionUri: string) {
   );
 
   const accountUri = sparqlResult.results.bindings?.[0]?.account.value;
-  console.log(`Account <${accountUri}> is logged in.`);
+  log.info('Account found for session', {
+    account: accountUri,
+    session: sessionUri,
+  });
   return accountUri;
 }
 
