@@ -3,6 +3,7 @@ import { app } from 'mu';
 import express, { Request, ErrorRequestHandler } from 'express';
 import bodyParser from 'body-parser';
 
+import { authRouter } from './router/auth';
 import { processRouter } from './router/process';
 import { impersonateRouter } from './router/impersonate';
 import { HttpError } from './util/http-error';
@@ -19,6 +20,7 @@ app.use(
 );
 
 app.use(express.urlencoded({ extended: true }));
+app.use('/auth', authRouter);
 app.use('/act-on-behalf-of', impersonateRouter);
 app.use('/processes', processRouter);
 app.get('/health-check', (req: Request, res: Response) => {
