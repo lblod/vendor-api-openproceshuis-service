@@ -1,7 +1,7 @@
 export const processContext = {
   '@version': 1.1,
-  type: '@type',
   Process: 'https://w3id.org/dpv#Process',
+  '@base': 'http://data.lblod.info/processes/',
   title: {
     '@id': 'http://purl.org/dc/terms/title',
     '@type': 'http://www.w3.org/2001/XMLSchema#string',
@@ -47,18 +47,41 @@ export const processContext = {
     },
   },
   diagrams: {
-    '@reverse':
-      'http://www.semanticdesktop.org/ontologies/2007/01/19/nie#isPartOf',
-    '@container': '@set',
-    '@type': '@id',
+    '@id': 'http://schema.org/hasPart',
     '@context': {
-      FileDataObject:
-        'http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#FileDataObject',
+      '@base': 'http://data.lblod.info/diagram-lists/',
+      order: 'http://schema.org/itemListOrder',
+      version: {
+        '@id': 'https://schema.org/version',
+        '@type': 'http://www.w3.org/2001/XMLSchema#string',
+      },
+      created: {
+        '@id': 'http://purl.org/dc/terms/created',
+        '@type': 'http://www.w3.org/2001/XMLSchema#dateTime',
+      },
+      modified: {
+        '@id': 'http://purl.org/dc/terms/modified',
+        '@type': 'http://www.w3.org/2001/XMLSchema#dateTime',
+      },
+      'diagram-list-items': {
+        '@id': 'http://schema.org/itemListElement',
+        '@container': '@list',
+        '@context': {
+          '@base': 'http://data.lblod.info/diagram-list-items/',
+          position: {
+            '@id': 'https://schema.org/position',
+            '@type': 'http://www.w3.org/2001/XMLSchema#integer',
+          },
+          diagramFile: {
+            '@id': 'http://schema.org/item',
+            '@type': '@id',
+          },
+        },
+      },
     },
   },
   attachments: {
-    '@reverse':
-      'http://www.semanticdesktop.org/ontologies/2007/01/19/nie#isPartOf',
+    '@id': 'http://www.semanticdesktop.org/ontologies/2007/01/19/nie#isPartOf',
     '@container': '@set',
     '@type': '@id',
     '@context': {

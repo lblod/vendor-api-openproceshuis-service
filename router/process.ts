@@ -38,13 +38,13 @@ processRouter.post('/', async (req: Request, res: Response) => {
     const resourceUri = errorOnResourceUriMissingInRequest(req);
     validatePostProcessRequestBody(req);
 
-    const expandedLd = await getExpandedRequestBody(
-      enrichRequestBodyWithContext(req),
-    );
+    const enrichedBody = enrichRequestBodyWithContext(req);
+    const expandedLd = await getExpandedRequestBody(enrichedBody);
+
     await validateRequestBodyAgainstExpandedLd(expandedLd);
-    const requestInsertDataTriples = await getQuadInsertDataFromRequestBody(
-      enrichRequestBodyWithContext(req),
-    );
+
+    const requestInsertDataTriples =
+      await getQuadInsertDataFromRequestBody(enrichedBody);
 
     const vendorUri = await getVendorUriFromSession(sessionUri);
     const processUri = await createNewProcess(

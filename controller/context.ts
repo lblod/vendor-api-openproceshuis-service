@@ -12,7 +12,7 @@ export async function validateRequestBodyAgainstExpandedLd(
 ): Promise<void> {
   const resource = {
     uri: expandedLd['@id'],
-    typeUri: expandedLd['@type'][0],
+    typeUri: 'https://w3id.org/dpv#Process',
   };
   const foundTypeForResourceUri = await getResourceTypeUri(resource.uri);
   if (foundTypeForResourceUri && foundTypeForResourceUri !== resource.typeUri) {
@@ -90,9 +90,11 @@ function prepareForExpansion(data: EnrichedBody) {
 export async function getExpandedRequestBody(
   enrichedBody: EnrichedBody,
 ): Promise<object> {
-  const context = enrichedBody['@context'];
-  delete enrichedBody['@context'];
-  const cleanData = prepareForExpansion(enrichedBody);
+  const body = {} as EnrichedBody;
+  Object.assign(body, enrichedBody);
+  const context = body['@context'];
+  delete body['@context'];
+  const cleanData = prepareForExpansion(body);
   try {
     const expanded = await jsonld.expand({
       ...cleanData,
