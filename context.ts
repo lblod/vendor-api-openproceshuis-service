@@ -1,5 +1,6 @@
 export const processContext = {
   '@version': 1.1,
+  type: '@type',
   Process: 'https://w3id.org/dpv#Process',
   '@base': 'http://data.lblod.info/processes/',
   uuid: 'http://mu.semte.ch/vocabularies/core/uuid',
@@ -50,6 +51,7 @@ export const processContext = {
   diagrams: {
     '@id': 'http://schema.org/hasPart',
     '@context': {
+      type: '@type',
       DiagramList: 'http://schema.org/ItemList',
       '@base': 'http://data.lblod.info/diagram-lists/',
       uuid: 'http://mu.semte.ch/vocabularies/core/uuid',
@@ -70,6 +72,7 @@ export const processContext = {
         '@id': 'http://schema.org/itemListElement',
         '@container': '@set',
         '@context': {
+          type: '@type',
           DiagramListItem: 'http://schema.org/ListItem',
           '@base': 'http://data.lblod.info/diagram-list-items/',
           uuid: 'http://mu.semte.ch/vocabularies/core/uuid',
@@ -93,6 +96,7 @@ export const processContext = {
             '@id': 'http://schema.org/itemListElement',
             '@container': '@set',
             '@context': {
+              type: '@type',
               DiagramListItem: 'http://schema.org/ListItem',
               '@base': 'http://data.lblod.info/diagram-list-items/',
               position: {
@@ -170,6 +174,7 @@ export const processContext = {
     '@id': 'http://www.w3.org/2000/01/rdf-schema#seeAlso',
     '@container': '@set',
     '@context': {
+      type: '@type',
       Bookmark:
         'http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#Bookmark',
       '@base': 'http://data.lblod.info/links/',

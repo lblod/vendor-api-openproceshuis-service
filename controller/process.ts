@@ -27,6 +27,7 @@ export async function createNewProcess(
     `
     PREFIX dct: <http://purl.org/dc/terms/>
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
+
     INSERT DATA {
       ${requestInsertDataTriples}
       ${sparqlEscapeUri(processUri)} mu:uuid ${sparqlEscapeString(uuid())}.

@@ -8,6 +8,7 @@ export function diagramsToContext(fileUris: Array<string>) {
   const now = new Date().toISOString();
   const listNodeId = uuid();
   return {
+    type: 'DiagramList',
     '@id': listNodeId,
     uuid: listNodeId,
     order: 'https://schema.org/ItemListUnordered',
@@ -17,6 +18,7 @@ export function diagramsToContext(fileUris: Array<string>) {
     'diagram-list-items': fileUris.map((uri, index) => {
       const listItemNodeId = uuid();
       return {
+        type: 'DiagramListItem',
         '@id': listItemNodeId,
         uuid: listItemNodeId,
         position: index + 1,
@@ -38,6 +40,7 @@ export function linksToContext(linkUrls: Array<string>) {
     const linkNodeId = uuid();
     const href = uri;
     return {
+      type: 'Bookmark',
       '@id': linkNodeId,
       uuid: linkNodeId,
       label: href,
