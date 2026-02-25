@@ -11,7 +11,7 @@ export function diagramsToContext(fileUris: Array<string>) {
     '@id': listNodeId,
     uuid: listNodeId,
     order: 'https://schema.org/ItemListUnordered',
-    version: null,
+    version: 'v0.0.0',
     created: now,
     modified: now,
     'diagram-list-items': fileUris.map((uri, index) => {
@@ -26,4 +26,23 @@ export function diagramsToContext(fileUris: Array<string>) {
       };
     }),
   };
+}
+
+export function linksToContext(linkUrls: Array<string>) {
+  if (linkUrls.length === 0) {
+    return null;
+  }
+
+  const now = new Date().toISOString();
+  return linkUrls.map((uri) => {
+    const linkNodeId = uuid();
+    const href = uri;
+    return {
+      '@id': linkNodeId,
+      uuid: linkNodeId,
+      label: href,
+      href: href,
+      modified: now,
+    };
+  });
 }

@@ -7,7 +7,7 @@ import isUrl from '../util/is-url';
 import isEmail from '../util/is-email';
 import isMaxLength from '../util/is-max-length';
 import { EnrichedBody } from '../types';
-import { diagramsToContext } from '../util/transform-context';
+import { diagramsToContext, linksToContext } from '../util/transform-context';
 
 export function getSessionUriFromRequest(request: Request): string {
   const HEADER_MU_SESSION_ID = 'mu-session-id';
@@ -61,14 +61,14 @@ export function errorOnResourceUriMissingInRequest(request: Request): string {
 
 export function enrichRequestBodyWithContext(request: Request): EnrichedBody {
   const enrichedBody = request.body;
-  if (!enrichedBody['@context']) {
-    enrichedBody['@context'] = processContext;
-  }
-  if (!enrichedBody['type']) {
-    enrichedBody['type'] = 'Process';
+  if (enrichedBody['@context']) {
+    return enrichedBody;
   }
 
+  enrichedBody['@context'] = processContext;
+  enrichedBody['type'] = 'Process';
   enrichedBody['diagrams'] = diagramsToContext(request.body['diagrams']);
+  enrichedBody['links'] = linksToContext(request.body['links']);
 
   return enrichedBody;
 }
@@ -103,11 +103,19 @@ const processResourceKeys = () => {
         value === null || (valueIsStringAndNotEmpty(value) && isUrl(value)),
       requiredValueAsString: 'null or an uri',
     },
+    'linked-blueprints': {
+      validate: (value: Array<string>) => valueIsArrayOfUris(value),
+      requiredValueAsString: 'an array of uris',
+    },
     diagrams: {
       validate: (value: Array<string>) => valueIsArrayOfSingleUri(value),
       requiredValueAsString: 'an array with a single uri',
     },
     attachments: {
+      validate: (value: Array<string>) => valueIsArrayOfUris(value),
+      requiredValueAsString: 'an array of uris',
+    },
+    links: {
       validate: (value: Array<string>) => valueIsArrayOfUris(value),
       requiredValueAsString: 'an array of uris',
     },

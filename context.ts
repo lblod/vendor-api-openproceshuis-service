@@ -146,7 +146,8 @@ export const processContext = {
     '@type': '@id',
     '@container': '@set',
     '@context': {
-      Concept: 'http://www.w3.org/2004/02/skos/core#Concept',
+      InformationAsset:
+        'http://lblod.data.gift/vocabularies/informationclassification/InformationAsset',
     },
   },
   'linked-blueprints': {
@@ -167,11 +168,24 @@ export const processContext = {
   },
   links: {
     '@id': 'http://www.w3.org/2000/01/rdf-schema#seeAlso',
-    '@type': '@id',
     '@container': '@set',
     '@context': {
       Bookmark:
         'http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#Bookmark',
+      '@base': 'http://data.lblod.info/links/',
+      uuid: 'http://mu.semte.ch/vocabularies/core/uuid',
+      label: {
+        '@id': 'http://www.w3.org/2004/02/skos/core#prefLabel',
+        '@type': 'http://www.w3.org/2001/XMLSchema#string',
+      },
+      href: {
+        '@id': 'http://www.semanticdesktop.org/ontologies/2007/01/19/nie#links',
+        '@type': 'http://www.w3.org/2001/XMLSchema#string',
+      },
+      modified: {
+        '@id': 'http://purl.org/dc/terms/modified',
+        '@type': 'http://www.w3.org/2001/XMLSchema#dateTime',
+      },
     },
   },
 };
