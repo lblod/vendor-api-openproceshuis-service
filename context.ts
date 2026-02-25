@@ -2,6 +2,7 @@ export const processContext = {
   '@version': 1.1,
   Process: 'https://w3id.org/dpv#Process',
   '@base': 'http://data.lblod.info/processes/',
+  uuid: 'http://mu.semte.ch/vocabularies/core/uuid',
   title: {
     '@id': 'http://purl.org/dc/terms/title',
     '@type': 'http://www.w3.org/2001/XMLSchema#string',
@@ -11,7 +12,7 @@ export const processContext = {
     '@type': 'http://www.w3.org/2001/XMLSchema#string',
   },
   email: {
-    '@id': 'https://schema.org/email',
+    '@id': 'http://schema.org/email',
     '@type': 'http://www.w3.org/2001/XMLSchema#string',
   },
   created: {
@@ -49,10 +50,12 @@ export const processContext = {
   diagrams: {
     '@id': 'http://schema.org/hasPart',
     '@context': {
+      DiagramList: 'http://schema.org/ItemList',
       '@base': 'http://data.lblod.info/diagram-lists/',
+      uuid: 'http://mu.semte.ch/vocabularies/core/uuid',
       order: 'http://schema.org/itemListOrder',
       version: {
-        '@id': 'https://schema.org/version',
+        '@id': 'http://schema.org/version',
         '@type': 'http://www.w3.org/2001/XMLSchema#string',
       },
       created: {
@@ -65,16 +68,50 @@ export const processContext = {
       },
       'diagram-list-items': {
         '@id': 'http://schema.org/itemListElement',
-        '@container': '@list',
+        '@container': '@set',
         '@context': {
+          DiagramListItem: 'http://schema.org/ListItem',
           '@base': 'http://data.lblod.info/diagram-list-items/',
+          uuid: 'http://mu.semte.ch/vocabularies/core/uuid',
           position: {
-            '@id': 'https://schema.org/position',
+            '@id': 'http://schema.org/position',
             '@type': 'http://www.w3.org/2001/XMLSchema#integer',
+          },
+          created: {
+            '@id': 'http://purl.org/dc/terms/created',
+            '@type': 'http://www.w3.org/2001/XMLSchema#dateTime',
+          },
+          modified: {
+            '@id': 'http://purl.org/dc/terms/modified',
+            '@type': 'http://www.w3.org/2001/XMLSchema#dateTime',
           },
           diagramFile: {
             '@id': 'http://schema.org/item',
             '@type': '@id',
+          },
+          'diagram-list-items': {
+            '@id': 'http://schema.org/itemListElement',
+            '@container': '@set',
+            '@context': {
+              DiagramListItem: 'http://schema.org/ListItem',
+              '@base': 'http://data.lblod.info/diagram-list-items/',
+              position: {
+                '@id': 'http://schema.org/position',
+                '@type': 'http://www.w3.org/2001/XMLSchema#integer',
+              },
+              created: {
+                '@id': 'http://purl.org/dc/terms/created',
+                '@type': 'http://www.w3.org/2001/XMLSchema#dateTime',
+              },
+              modified: {
+                '@id': 'http://purl.org/dc/terms/modified',
+                '@type': 'http://www.w3.org/2001/XMLSchema#dateTime',
+              },
+              diagramFile: {
+                '@id': 'http://schema.org/item',
+                '@type': '@id',
+              },
+            },
           },
         },
       },

@@ -7,6 +7,7 @@ import isUrl from '../util/is-url';
 import isEmail from '../util/is-email';
 import isMaxLength from '../util/is-max-length';
 import { EnrichedBody } from '../types';
+import { diagramsToContext } from '../util/transform-context';
 
 export function getSessionUriFromRequest(request: Request): string {
   const HEADER_MU_SESSION_ID = 'mu-session-id';
@@ -66,6 +67,9 @@ export function enrichRequestBodyWithContext(request: Request): EnrichedBody {
   if (!enrichedBody['type']) {
     enrichedBody['type'] = 'Process';
   }
+
+  enrichedBody['diagrams'] = diagramsToContext(request.body['diagrams']);
+
   return enrichedBody;
 }
 
