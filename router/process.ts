@@ -112,17 +112,19 @@ processRouter.put('/', async (req: Request, res: Response) => {
 
     validatePutProcessRequestBody(req);
 
-    const requestDataAsLd = await getExpandedRequestBody(
-      enrichRequestBodyWithContext(req),
-    );
-    await validateRequestBodyAgainstExpandedLd(requestDataAsLd);
-    const requestInsertDataTriples = await getQuadInsertDataFromRequestBody(
-      enrichRequestBodyWithContext(req),
-    );
-    const requestDeleteDataTriples = await getQuadDeleteDataFromRequestBody(
-      enrichRequestBodyWithContext(req),
-    );
-    return res.status(409).send('debug');
+    const enrichedBody = enrichRequestBodyWithContext(req);
+    const expandedLd = await getExpandedRequestBody(enrichedBody);
+
+    await validateRequestBodyAgainstExpandedLd(expandedLd);
+
+    const requestInsertDataTriples =
+      await getQuadInsertDataFromRequestBody(enrichedBody);
+
+    const deleteEnrichedBody = {} as EnrichedBody;
+    Object.assign(deleteEnrichedBody, enrichedBody);
+    delete deleteEnrichedBody['diagrams'];
+    const requestDeleteDataTriples =
+      await getQuadDeleteDataFromRequestBody(deleteEnrichedBody);
 
     await updateProcess(
       resourceUri,
