@@ -27,6 +27,7 @@ import {
   getQuadInsertDataFromRequestBody,
   validateRequestBodyAgainstExpandedLd,
 } from '../controller/context';
+import { EnrichedBody } from '../types';
 
 export const processRouter = Router();
 
@@ -72,16 +73,19 @@ processRouter.patch('/', async (req: Request, res: Response) => {
 
     validatePatchProcessRequestBody(req);
 
-    const requestDataAsLd = await getExpandedRequestBody(
-      enrichRequestBodyWithContext(req),
-    );
-    await validateRequestBodyAgainstExpandedLd(requestDataAsLd);
-    const requestInsertDataTriples = await getQuadInsertDataFromRequestBody(
-      enrichRequestBodyWithContext(req),
-    );
-    const requestDeleteDataTriples = await getQuadDeleteDataFromRequestBody(
-      enrichRequestBodyWithContext(req),
-    );
+    const enrichedBody = enrichRequestBodyWithContext(req);
+    const expandedLd = await getExpandedRequestBody(enrichedBody);
+
+    await validateRequestBodyAgainstExpandedLd(expandedLd);
+
+    const requestInsertDataTriples =
+      await getQuadInsertDataFromRequestBody(enrichedBody);
+
+    const deleteEnrichedBody = {} as EnrichedBody;
+    Object.assign(deleteEnrichedBody, enrichedBody);
+    delete deleteEnrichedBody['diagrams'];
+    const requestDeleteDataTriples =
+      await getQuadDeleteDataFromRequestBody(deleteEnrichedBody);
 
     await updateProcess(
       resourceUri,
@@ -118,6 +122,7 @@ processRouter.put('/', async (req: Request, res: Response) => {
     const requestDeleteDataTriples = await getQuadDeleteDataFromRequestBody(
       enrichRequestBodyWithContext(req),
     );
+    return res.status(409).send('debug');
 
     await updateProcess(
       resourceUri,

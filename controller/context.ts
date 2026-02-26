@@ -119,9 +119,11 @@ export async function getExpandedRequestBody(
 export async function getQuadInsertDataFromRequestBody(
   enrichedBody: EnrichedBody,
 ): Promise<string> {
-  const context = enrichedBody['@context'];
-  delete enrichedBody['@context'];
-  const cleanData = prepareForExpansion(enrichedBody);
+  const body = {} as EnrichedBody;
+  Object.assign(body, enrichedBody);
+  const context = body['@context'];
+  delete body['@context'];
+  const cleanData = prepareForExpansion(body);
   try {
     return await jsonld.toRDF(
       {
