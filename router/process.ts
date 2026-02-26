@@ -10,6 +10,7 @@ import {
   updateProcess,
   removeFileFromProcess,
   errorOnProcessNotOwnedByVendor,
+  countOfCurrentDiagramListsOnProcess,
 } from '../controller/process';
 import isUrl from '../util/is-url';
 import { getVendorUriFromSession } from '../controller/impersonate';
@@ -39,7 +40,9 @@ processRouter.post('/', async (req: Request, res: Response) => {
     const resourceUri = errorOnResourceUriMissingInRequest(req);
     validatePostProcessRequestBody(req);
 
-    const enrichedBody = enrichRequestBodyWithContext(req);
+    const enrichedBody = enrichRequestBodyWithContext(req, {
+      versionNumberForDiagramList: 0,
+    });
     const expandedLd = await getExpandedRequestBody(enrichedBody);
 
     await validateRequestBodyAgainstExpandedLd(expandedLd);
@@ -73,7 +76,11 @@ processRouter.patch('/', async (req: Request, res: Response) => {
 
     validatePatchProcessRequestBody(req);
 
-    const enrichedBody = enrichRequestBodyWithContext(req);
+    const currentDiagramListCount =
+      await countOfCurrentDiagramListsOnProcess(resourceUri);
+    const enrichedBody = enrichRequestBodyWithContext(req, {
+      versionNumberForDiagramList: currentDiagramListCount + 1,
+    });
     const expandedLd = await getExpandedRequestBody(enrichedBody);
 
     await validateRequestBodyAgainstExpandedLd(expandedLd);
@@ -112,7 +119,11 @@ processRouter.put('/', async (req: Request, res: Response) => {
 
     validatePutProcessRequestBody(req);
 
-    const enrichedBody = enrichRequestBodyWithContext(req);
+    const currentDiagramListCount =
+      await countOfCurrentDiagramListsOnProcess(resourceUri);
+    const enrichedBody = enrichRequestBodyWithContext(req, {
+      versionNumberForDiagramList: currentDiagramListCount + 1,
+    });
     const expandedLd = await getExpandedRequestBody(enrichedBody);
 
     await validateRequestBodyAgainstExpandedLd(expandedLd);

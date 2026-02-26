@@ -1,6 +1,6 @@
 import { uuid } from 'mu';
 
-export function diagramsToContext(fileUris: Array<string>) {
+export function diagramsToContext(fileUris: Array<string>, versionNumber = 0) {
   if (fileUris.length === 0) {
     return null;
   }
@@ -12,7 +12,7 @@ export function diagramsToContext(fileUris: Array<string>) {
     '@id': listNodeId,
     uuid: listNodeId,
     order: 'https://schema.org/ItemListUnordered',
-    version: 'v0.0.0',
+    version: `v0.0.${versionNumber}`,
     created: now,
     modified: now,
     'diagram-list-items': fileUris.map((uri, index) => {

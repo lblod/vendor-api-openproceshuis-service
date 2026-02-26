@@ -242,3 +242,36 @@ export async function errorOnProcessNotOwnedByVendor(
     );
   }
 }
+
+export async function countOfCurrentDiagramListsOnProcess(
+  processUri: string,
+): Promise<number> {
+  try {
+    const sparqlResult = await query(
+      `
+    PREFIX dpv: <https://w3id.org/dpv#>
+    PREFIX schema: <http://schema.org/>
+
+    SELECT (COUNT(DISTINCT ?diagramList) as ?count)
+    WHERE {
+      ${sparqlEscapeUri(processUri)} a dpv:Process .
+      ${sparqlEscapeUri(processUri)} schema:hasPart ?diagramList .
+    }  
+  `,
+      { sudo: true },
+    );
+
+    const count = sparqlResult.results?.bindings?.[0]?.count?.value;
+
+    return parseInt(count) ?? 0;
+  } catch (error) {
+    log.info(
+      'Could not fetch current diagram list count for process. Returning 0',
+      {
+        process: processUri,
+      },
+    );
+
+    return 0;
+  }
+}

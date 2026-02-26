@@ -6,7 +6,7 @@ import { processContext } from '../context';
 import isUrl from '../util/is-url';
 import isEmail from '../util/is-email';
 import isMaxLength from '../util/is-max-length';
-import { EnrichedBody } from '../types';
+import { EnrichedBody, EnrichedBodyOptions } from '../types';
 import { diagramsToContext, linksToContext } from '../util/transform-context';
 
 export function getSessionUriFromRequest(request: Request): string {
@@ -59,7 +59,10 @@ export function errorOnResourceUriMissingInRequest(request: Request): string {
   return uri;
 }
 
-export function enrichRequestBodyWithContext(request: Request): EnrichedBody {
+export function enrichRequestBodyWithContext(
+  request: Request,
+  options: EnrichedBodyOptions,
+): EnrichedBody {
   const enrichedBody = request.body;
   if (enrichedBody['@context']) {
     return enrichedBody;
@@ -67,7 +70,10 @@ export function enrichRequestBodyWithContext(request: Request): EnrichedBody {
 
   enrichedBody['@context'] = processContext;
   enrichedBody['type'] = 'Process';
-  enrichedBody['diagrams'] = diagramsToContext(request.body['diagrams']);
+  enrichedBody['diagrams'] = diagramsToContext(
+    request.body['diagrams'],
+    options.versionNumberForDiagramList,
+  );
   enrichedBody['links'] = linksToContext(request.body['links']);
 
   return enrichedBody;
