@@ -148,25 +148,22 @@ export async function getQuadDeleteDataFromRequestBody(
   const context = enrichedBody['@context'];
   const deleteTriplesArray = [];
   const whereDeleteTriplesArray = [];
+  const predicateValues = [];
   Object.keys(enrichedBody).map((key) => {
     const keysToIgnore = ['@id', '@context', 'type'];
     if (keysToIgnore.includes(key)) {
       return;
     }
-
-    const safeQueryKey = key.replace(/[^a-zA-Z0-9]/g, '');
-    if (context[key]?.['@reverse']) {
-      const predicate = context[key]?.['@reverse'];
-      const tripleString = `?${safeQueryKey} ${sparqlEscapeUri(predicate)} ${sparqlEscapeUri(resourceUri)} .`;
-      deleteTriplesArray.push(tripleString);
-      whereDeleteTriplesArray.push(`OPTIONAL { ${tripleString} }`);
-    } else {
-      const predicate = context[key]?.['@id'];
-      const tripleString = `${sparqlEscapeUri(resourceUri)} ${sparqlEscapeUri(predicate)} ?${safeQueryKey} .`;
-      deleteTriplesArray.push(tripleString);
-      whereDeleteTriplesArray.push(`OPTIONAL { ${tripleString} }`);
-    }
+    const predicate = context[key]?.['@id'];
+    predicateValues.push(sparqlEscapeUri(predicate));
   });
+
+  if (predicateValues.length >= 1) {
+    whereDeleteTriplesArray.push(`VALUES ?p { ${predicateValues.join(' ')} }`);
+    const triple = `${sparqlEscapeUri(resourceUri)} ?p ?o .`;
+    whereDeleteTriplesArray.push(triple);
+    deleteTriplesArray.push(triple);
+  }
 
   return {
     delete: deleteTriplesArray.join('\n'),

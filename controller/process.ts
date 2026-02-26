@@ -72,8 +72,7 @@ export async function updateProcess(
     }
     WHERE {
       GRAPH ?g {
-        VALUES ?process { ${sparqlEscapeUri(processUri)} }
-        ?process a dpv:Process .
+        ${sparqlEscapeUri(processUri)} a dpv:Process .
         ${requestDeleteDataTriples.where}
       }
     }  
@@ -95,8 +94,7 @@ export async function updateProcess(
     }
     WHERE {
       GRAPH ?g {
-        VALUES ?process { ${sparqlEscapeUri(processUri)} }
-        ?process a dpv:Process .
+        ${sparqlEscapeUri(processUri)} a dpv:Process .
       }
     }  
   `,
