@@ -122,17 +122,13 @@ export const processContext = {
     },
   },
   attachments: {
-    '@id': 'http://www.semanticdesktop.org/ontologies/2007/01/19/nie#isPartOf',
+    '@id': 'http://schema.org/associatedMedia',
     '@container': '@set',
     '@type': '@id',
     '@context': {
       FileDataObject:
         'http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#FileDataObject',
     },
-  },
-  'ipdc-products': {
-    '@reverse': 'http://purl.org/vocab/cpsv#follows',
-    '@container': '@set',
   },
   'relevant-administrative-units': {
     '@id':
