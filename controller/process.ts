@@ -32,7 +32,6 @@ export async function createNewProcess(
       ${sparqlEscapeUri(processUri)} mu:uuid ${sparqlEscapeString(uuid())}.
       ${sparqlEscapeUri(processUri)} dct:publisher ${sparqlEscapeUri(bestuurseenheid.uri)} .
       ${sparqlEscapeUri(processUri)} dct:creator ${sparqlEscapeUri(vendorUri)} .
-      ${sparqlEscapeUri(processUri)} dct:contributor ${sparqlEscapeUri(vendorUri)} .
       ${sparqlEscapeUri(processUri)} dct:created ${sparqlEscapeDateTime(new Date())} .
     }  
   `,
@@ -90,10 +89,8 @@ export async function updateProcess(
   await updateQueryWithCatch(
     `
     PREFIX dpv: <https://w3id.org/dpv#>
-    PREFIX dct: <http://purl.org/dc/terms/>
     INSERT {
       ${requestInsertDataTriples}
-      ?process dct:contributor ${sparqlEscapeUri(vendorUri)} .
     }
     WHERE {
       GRAPH ?g {
@@ -113,10 +110,7 @@ export async function updateProcess(
   });
 }
 
-export async function archiveProcess(
-  processUri: string,
-  vendorUri: string,
-): Promise<void> {
+export async function archiveProcess(processUri: string): Promise<void> {
   if (!(await isExistingProcessUri(processUri))) {
     throw new HttpError(
       'Process with uri not found.',
@@ -130,13 +124,11 @@ export async function archiveProcess(
     `
     PREFIX dpv: <https://w3id.org/dpv#>
     PREFIX adms: <http://www.w3.org/ns/adms#>
-    PREFIX dct: <http://purl.org/dc/terms/>
     DELETE {
       ?process adms:status ?status .
     }
     INSERT {
       ?process adms:status ${sparqlEscapeUri(archivedStatusUri)} .
-      ?process dct:contributor ${sparqlEscapeUri(vendorUri)} .
     }
     WHERE {
       VALUES ?process { ${sparqlEscapeUri(processUri)} }

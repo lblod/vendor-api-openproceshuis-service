@@ -130,11 +130,10 @@ processRouter.put('/', async (req: Request, res: Response) => {
 
 processRouter.delete('/', async (req: Request, res: Response) => {
   try {
-    const { sessionUri } = await authenticateBeforeAction(req);
+    await authenticateBeforeAction(req);
     errorOnResourceUriMissingInRequest(req);
 
-    const vendorUri = await getVendorUriFromSession(sessionUri);
-    await archiveProcess(req.body['@id'], vendorUri);
+    await archiveProcess(req.body['@id']);
 
     return res.status(204).send();
   } catch (error) {
