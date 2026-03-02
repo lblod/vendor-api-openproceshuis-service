@@ -210,3 +210,30 @@ async function isExistingProcessUri(processUri: string): Promise<boolean> {
   );
   return Boolean(sudoResult.boolean);
 }
+
+export async function errorOnProcessNotOwnedByVendor(
+  processUri: string,
+  vendorUri: string,
+): Promise<void> {
+  let isOwnedByVendor = false;
+  if (processUri && vendorUri) {
+    const sparqlResult = await query(`
+    PREFIX dpv: <https://w3id.org/dpv#>
+    PREFIX dct: <http://purl.org/dc/terms/>
+    ASK {
+      ${sparqlEscapeUri(processUri)} a dpv:Process .
+      ${sparqlEscapeUri(processUri)} dct:creator ${sparqlEscapeUri(vendorUri)} .
+    }  
+  `);
+
+    isOwnedByVendor = Boolean(sparqlResult.boolean);
+  }
+
+  if (!isOwnedByVendor) {
+    throw new HttpError(
+      'You are not an owner of this resource.',
+      403,
+      `The file ${processUri} is not owned by ${vendorUri} and so you cannot edit this resource.`,
+    );
+  }
+}
