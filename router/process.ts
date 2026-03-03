@@ -9,6 +9,7 @@ import {
   createNewProcess,
   updateProcess,
   removeFileFromProcess,
+  errorOnProcessNotOwnedByVendor,
 } from '../controller/process';
 import isUrl from '../util/is-url';
 import { getVendorUriFromSession } from '../controller/impersonate';
@@ -66,6 +67,9 @@ processRouter.patch('/', async (req: Request, res: Response) => {
 
     errorOnCustomContextInRequest(req);
     const resourceUri = errorOnResourceUriMissingInRequest(req);
+    const vendorUri = await getVendorUriFromSession(sessionUri);
+    await errorOnProcessNotOwnedByVendor(resourceUri, vendorUri);
+
     validatePatchProcessRequestBody(req);
 
     const requestDataAsLd = await getExpandedRequestBody(
@@ -79,7 +83,6 @@ processRouter.patch('/', async (req: Request, res: Response) => {
       enrichRequestBodyWithContext(req),
     );
 
-    const vendorUri = await getVendorUriFromSession(sessionUri);
     await updateProcess(
       resourceUri,
       vendorUri,
@@ -100,6 +103,9 @@ processRouter.put('/', async (req: Request, res: Response) => {
 
     errorOnCustomContextInRequest(req);
     const resourceUri = errorOnResourceUriMissingInRequest(req);
+    const vendorUri = await getVendorUriFromSession(sessionUri);
+    await errorOnProcessNotOwnedByVendor(resourceUri, vendorUri);
+
     validatePutProcessRequestBody(req);
 
     const requestDataAsLd = await getExpandedRequestBody(
@@ -113,7 +119,6 @@ processRouter.put('/', async (req: Request, res: Response) => {
       enrichRequestBodyWithContext(req),
     );
 
-    const vendorUri = await getVendorUriFromSession(sessionUri);
     await updateProcess(
       resourceUri,
       vendorUri,
@@ -131,10 +136,12 @@ processRouter.put('/', async (req: Request, res: Response) => {
 processRouter.delete('/', async (req: Request, res: Response) => {
   try {
     const { sessionUri } = await authenticateBeforeAction(req);
-    errorOnResourceUriMissingInRequest(req);
 
+    const resourceUri = errorOnResourceUriMissingInRequest(req);
     const vendorUri = await getVendorUriFromSession(sessionUri);
-    await archiveProcess(req.body['@id'], vendorUri);
+    await errorOnProcessNotOwnedByVendor(resourceUri, vendorUri);
+
+    await archiveProcess(resourceUri);
 
     return res.status(204).send();
   } catch (error) {
@@ -145,9 +152,12 @@ processRouter.delete('/', async (req: Request, res: Response) => {
 
 processRouter.delete('/files', async (req: Request, res: Response) => {
   try {
-    await authenticateBeforeAction(req);
+    const { sessionUri } = await authenticateBeforeAction(req);
 
-    errorOnResourceUriMissingInRequest(req);
+    const resourceUri = errorOnResourceUriMissingInRequest(req);
+    const vendorUri = await getVendorUriFromSession(sessionUri);
+    await errorOnProcessNotOwnedByVendor(resourceUri, vendorUri);
+
     const fileUri = req.body['fileUri'];
     if (!fileUri || fileUri.trim() == '' || !isUrl(fileUri)) {
       throw new HttpError(
@@ -156,7 +166,7 @@ processRouter.delete('/files', async (req: Request, res: Response) => {
         'Property "fileUri" must be set when you want to remove a file from the process.',
       );
     }
-    await removeFileFromProcess(req.body['@id'], fileUri);
+    await removeFileFromProcess(resourceUri, fileUri);
 
     return res.status(204).send();
   } catch (error) {

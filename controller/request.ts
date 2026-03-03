@@ -74,6 +74,8 @@ const processResourceKeys = () => {
     value && typeof value === 'string' && value.trim() !== '';
   const valueIsArrayOfUris = (value: unknown) =>
     Array.isArray(value) && value.every((uri: string) => isUrl(uri));
+  const valueIsArrayOfSingleUri = (value: unknown) =>
+    Array.isArray(value) && value.length === 1 && isUrl(value[0]);
 
   const processKeys = {
     title: {
@@ -98,8 +100,8 @@ const processResourceKeys = () => {
       requiredValueAsString: 'null or an uri',
     },
     diagrams: {
-      validate: (value: Array<string>) => valueIsArrayOfUris(value),
-      requiredValueAsString: 'an array of uris',
+      validate: (value: Array<string>) => valueIsArrayOfSingleUri(value),
+      requiredValueAsString: 'an array with a single uri',
     },
     attachments: {
       validate: (value: Array<string>) => valueIsArrayOfUris(value),
@@ -142,12 +144,22 @@ function errorOnUseOfUnknownRequestBodyJsonKeys(request: Request) {
 export function validatePostProcessRequestBody(request: Request) {
   errorOnUseOfUnknownRequestBodyJsonKeys(request);
 
-  const { title = null } = request.body;
+  const { title = null, diagrams = null } = request.body;
   if (!title || !processResourceKeys().isValidKeyValue('title', title)) {
     throw new HttpError(
       'Property "title" is required in the body.',
       400,
       'Provide the "title" property as a non-empty string in the body.',
+    );
+  }
+  if (
+    !diagrams ||
+    !processResourceKeys().isValidKeyValue('diagrams', diagrams)
+  ) {
+    throw new HttpError(
+      'Property "diagrams" is required in the body.',
+      400,
+      'Provide the "diagrams" property as an array with a single uri in the body.',
     );
   }
 }
