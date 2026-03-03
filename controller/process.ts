@@ -237,7 +237,7 @@ export async function errorOnProcessNotOwnedByVendor(
     throw new HttpError(
       'You are not an owner of this resource.',
       403,
-      `The file ${processUri} is not owned by ${vendorUri} and so you cannot edit this resource.`,
+      `The process ${processUri} is not owned by ${vendorUri} and so you cannot edit this resource.`,
     );
   }
 }
