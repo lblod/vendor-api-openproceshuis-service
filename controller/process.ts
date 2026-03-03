@@ -221,8 +221,12 @@ export async function errorOnProcessNotOwnedByVendor(
     PREFIX dpv: <https://w3id.org/dpv#>
     PREFIX dct: <http://purl.org/dc/terms/>
     ASK {
+      VALUES ?ownedBy {
+        dct:creator
+        dct:publisher
+      }
       ${sparqlEscapeUri(processUri)} a dpv:Process .
-      ${sparqlEscapeUri(processUri)} dct:creator ${sparqlEscapeUri(vendorUri)} .
+      ${sparqlEscapeUri(processUri)} ?ownedBy ${sparqlEscapeUri(vendorUri)} .
     }  
   `);
 
