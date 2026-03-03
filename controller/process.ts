@@ -156,14 +156,25 @@ export async function removeFileFromProcess(
 ): Promise<void> {
   const sparqlResult = await query(
     `
-    PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
-    ASK {
-      ${sparqlEscapeUri(fileUri)} nie:isPartOf ?process .
-    }  
+    PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
+    PREFIX schema: <http://schema.org/>
+    SELECT ?process 
+    WHERE {
+      ${sparqlEscapeUri(fileUri)} a nfo:FileDataObject .
+
+      OPTIONAL {
+        ?process schema:associatedMedia ${sparqlEscapeUri(fileUri)} .
+      }
+      OPTIONAL {
+        ?process schema:hasPart / schema:itemListElement / schema:item ${sparqlEscapeUri(fileUri)} .
+      }
+    } LIMIT 1
   `,
     { sudo: false },
   );
-  const fileExistsOnProcess = Boolean(sparqlResult.boolean);
+  const fileExistsOnProcess = Boolean(
+    sparqlResult.results.bindings?.[0]?.process?.value,
+  );
   if (!fileExistsOnProcess) {
     throw new HttpError(
       'Could not find file on process.',
@@ -171,27 +182,33 @@ export async function removeFileFromProcess(
       `The file ${sparqlEscapeUri(fileUri)} was not found on process ${sparqlEscapeUri(processUri)}.`,
     );
   }
-
+  const archivedStatusUri =
+    'http://lblod.data.gift/concepts/concept-status/gearchiveerd';
   await updateQueryWithCatch(
     `
-    PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
-    PREFIX dpv: <https://w3id.org/dpv#>
+    PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
+    PREFIX adms: <http://www.w3.org/ns/adms#>
     DELETE {
-      ${sparqlEscapeUri(fileUri)} nie:isPartOf ?process .
+      ${sparqlEscapeUri(fileUri)} adms:status ?status .
+    }
+    INSERT {
+      ${sparqlEscapeUri(fileUri)} adms:status ${sparqlEscapeUri(archivedStatusUri)} .
     }
     WHERE {
-      VALUES ?process { ${sparqlEscapeUri(processUri)} }
-      ?process a dpv:Process .
+      ${sparqlEscapeUri(fileUri)} a nfo:FileDataObject .
+      OPTIONAL {
+        ${sparqlEscapeUri(fileUri)} adms:status ?status .
+      }
     }  
   `,
     { sudo: false },
     'Sparql query for removing file from process resource failed.',
     {
-      process: process['@id'],
+      process: processUri,
       file: fileUri,
     },
   );
-  log.info('Removed file from process', {
+  log.info('Archived file on process process', {
     process: processUri,
     file: fileUri,
   });
