@@ -136,6 +136,7 @@ processRouter.put('/', async (req: Request, res: Response) => {
 processRouter.delete('/', async (req: Request, res: Response) => {
   try {
     const { sessionUri } = await authenticateBeforeAction(req);
+
     const resourceUri = errorOnResourceUriMissingInRequest(req);
     const vendorUri = await getVendorUriFromSession(sessionUri);
     await errorOnProcessNotOwnedByVendor(resourceUri, vendorUri);
@@ -151,9 +152,12 @@ processRouter.delete('/', async (req: Request, res: Response) => {
 
 processRouter.delete('/files', async (req: Request, res: Response) => {
   try {
-    await authenticateBeforeAction(req);
+    const { sessionUri } = await authenticateBeforeAction(req);
 
     const resourceUri = errorOnResourceUriMissingInRequest(req);
+    const vendorUri = await getVendorUriFromSession(sessionUri);
+    await errorOnProcessNotOwnedByVendor(resourceUri, vendorUri);
+
     const fileUri = req.body['fileUri'];
     if (!fileUri || fileUri.trim() == '' || !isUrl(fileUri)) {
       throw new HttpError(
