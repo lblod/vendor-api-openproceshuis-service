@@ -1,7 +1,7 @@
 import { uuid } from 'mu';
 
 export function diagramsToContext(fileUris: Array<string>, versionNumber = 0) {
-  if (fileUris.length === 0) {
+  if (!fileUris || fileUris.length === 0) {
     return null;
   }
 
@@ -31,7 +31,7 @@ export function diagramsToContext(fileUris: Array<string>, versionNumber = 0) {
 }
 
 export function linksToContext(linkUrls: Array<string>) {
-  if (linkUrls.length === 0) {
+  if (!linkUrls || linkUrls.length === 0) {
     return null;
   }
 
