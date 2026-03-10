@@ -12,7 +12,7 @@ export async function validateRequestBodyAgainstExpandedLd(
 ): Promise<void> {
   const resource = {
     uri: expandedLd['@id'],
-    typeUri: expandedLd['@type'][0],
+    typeUri: 'https://w3id.org/dpv#Process',
   };
   const foundTypeForResourceUri = await getResourceTypeUri(resource.uri);
   if (foundTypeForResourceUri && foundTypeForResourceUri !== resource.typeUri) {
@@ -90,9 +90,11 @@ function prepareForExpansion(data: EnrichedBody) {
 export async function getExpandedRequestBody(
   enrichedBody: EnrichedBody,
 ): Promise<object> {
-  const context = enrichedBody['@context'];
-  delete enrichedBody['@context'];
-  const cleanData = prepareForExpansion(enrichedBody);
+  const body = {} as EnrichedBody;
+  Object.assign(body, enrichedBody);
+  const context = body['@context'];
+  delete body['@context'];
+  const cleanData = prepareForExpansion(body);
   try {
     const expanded = await jsonld.expand({
       ...cleanData,
@@ -117,9 +119,11 @@ export async function getExpandedRequestBody(
 export async function getQuadInsertDataFromRequestBody(
   enrichedBody: EnrichedBody,
 ): Promise<string> {
-  const context = enrichedBody['@context'];
-  delete enrichedBody['@context'];
-  const cleanData = prepareForExpansion(enrichedBody);
+  const body = {} as EnrichedBody;
+  Object.assign(body, enrichedBody);
+  const context = body['@context'];
+  delete body['@context'];
+  const cleanData = prepareForExpansion(body);
   try {
     return await jsonld.toRDF(
       {
@@ -144,25 +148,22 @@ export async function getQuadDeleteDataFromRequestBody(
   const context = enrichedBody['@context'];
   const deleteTriplesArray = [];
   const whereDeleteTriplesArray = [];
+  const predicateValues = [];
   Object.keys(enrichedBody).map((key) => {
     const keysToIgnore = ['@id', '@context', 'type'];
     if (keysToIgnore.includes(key)) {
       return;
     }
-
-    const safeQueryKey = key.replace(/[^a-zA-Z0-9]/g, '');
-    if (context[key]?.['@reverse']) {
-      const predicate = context[key]?.['@reverse'];
-      const tripleString = `?${safeQueryKey} ${sparqlEscapeUri(predicate)} ${sparqlEscapeUri(resourceUri)} .`;
-      deleteTriplesArray.push(tripleString);
-      whereDeleteTriplesArray.push(`OPTIONAL { ${tripleString} }`);
-    } else {
-      const predicate = context[key]?.['@id'];
-      const tripleString = `${sparqlEscapeUri(resourceUri)} ${sparqlEscapeUri(predicate)} ?${safeQueryKey} .`;
-      deleteTriplesArray.push(tripleString);
-      whereDeleteTriplesArray.push(`OPTIONAL { ${tripleString} }`);
-    }
+    const predicate = context[key]?.['@id'];
+    predicateValues.push(sparqlEscapeUri(predicate));
   });
+
+  if (predicateValues.length >= 1) {
+    whereDeleteTriplesArray.push(`VALUES ?p { ${predicateValues.join(' ')} }`);
+    const triple = `${sparqlEscapeUri(resourceUri)} ?p ?o .`;
+    whereDeleteTriplesArray.push(triple);
+    deleteTriplesArray.push(triple);
+  }
 
   return {
     delete: deleteTriplesArray.join('\n'),

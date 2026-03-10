@@ -10,6 +10,7 @@ import {
   updateProcess,
   removeFileFromProcess,
   errorOnProcessNotOwnedByVendor,
+  countOfCurrentDiagramListsOnProcess,
 } from '../controller/process';
 import isUrl from '../util/is-url';
 import { getVendorUriFromSession } from '../controller/impersonate';
@@ -27,6 +28,7 @@ import {
   getQuadInsertDataFromRequestBody,
   validateRequestBodyAgainstExpandedLd,
 } from '../controller/context';
+import { EnrichedBody } from '../types';
 
 export const processRouter = Router();
 
@@ -38,13 +40,15 @@ processRouter.post('/', async (req: Request, res: Response) => {
     const resourceUri = errorOnResourceUriMissingInRequest(req);
     validatePostProcessRequestBody(req);
 
-    const expandedLd = await getExpandedRequestBody(
-      enrichRequestBodyWithContext(req),
-    );
+    const enrichedBody = enrichRequestBodyWithContext(req, {
+      versionNumberForDiagramList: 0,
+    });
+    const expandedLd = await getExpandedRequestBody(enrichedBody);
+
     await validateRequestBodyAgainstExpandedLd(expandedLd);
-    const requestInsertDataTriples = await getQuadInsertDataFromRequestBody(
-      enrichRequestBodyWithContext(req),
-    );
+
+    const requestInsertDataTriples =
+      await getQuadInsertDataFromRequestBody(enrichedBody);
 
     const vendorUri = await getVendorUriFromSession(sessionUri);
     const processUri = await createNewProcess(
@@ -72,16 +76,23 @@ processRouter.patch('/', async (req: Request, res: Response) => {
 
     validatePatchProcessRequestBody(req);
 
-    const requestDataAsLd = await getExpandedRequestBody(
-      enrichRequestBodyWithContext(req),
-    );
-    await validateRequestBodyAgainstExpandedLd(requestDataAsLd);
-    const requestInsertDataTriples = await getQuadInsertDataFromRequestBody(
-      enrichRequestBodyWithContext(req),
-    );
-    const requestDeleteDataTriples = await getQuadDeleteDataFromRequestBody(
-      enrichRequestBodyWithContext(req),
-    );
+    const currentDiagramListCount =
+      await countOfCurrentDiagramListsOnProcess(resourceUri);
+    const enrichedBody = enrichRequestBodyWithContext(req, {
+      versionNumberForDiagramList: currentDiagramListCount + 1,
+    });
+    const expandedLd = await getExpandedRequestBody(enrichedBody);
+
+    await validateRequestBodyAgainstExpandedLd(expandedLd);
+
+    const requestInsertDataTriples =
+      await getQuadInsertDataFromRequestBody(enrichedBody);
+
+    const deleteEnrichedBody = {} as EnrichedBody;
+    Object.assign(deleteEnrichedBody, enrichedBody);
+    delete deleteEnrichedBody['diagrams'];
+    const requestDeleteDataTriples =
+      await getQuadDeleteDataFromRequestBody(deleteEnrichedBody);
 
     await updateProcess(
       resourceUri,
@@ -108,16 +119,23 @@ processRouter.put('/', async (req: Request, res: Response) => {
 
     validatePutProcessRequestBody(req);
 
-    const requestDataAsLd = await getExpandedRequestBody(
-      enrichRequestBodyWithContext(req),
-    );
-    await validateRequestBodyAgainstExpandedLd(requestDataAsLd);
-    const requestInsertDataTriples = await getQuadInsertDataFromRequestBody(
-      enrichRequestBodyWithContext(req),
-    );
-    const requestDeleteDataTriples = await getQuadDeleteDataFromRequestBody(
-      enrichRequestBodyWithContext(req),
-    );
+    const currentDiagramListCount =
+      await countOfCurrentDiagramListsOnProcess(resourceUri);
+    const enrichedBody = enrichRequestBodyWithContext(req, {
+      versionNumberForDiagramList: currentDiagramListCount + 1,
+    });
+    const expandedLd = await getExpandedRequestBody(enrichedBody);
+
+    await validateRequestBodyAgainstExpandedLd(expandedLd);
+
+    const requestInsertDataTriples =
+      await getQuadInsertDataFromRequestBody(enrichedBody);
+
+    const deleteEnrichedBody = {} as EnrichedBody;
+    Object.assign(deleteEnrichedBody, enrichedBody);
+    delete deleteEnrichedBody['diagrams'];
+    const requestDeleteDataTriples =
+      await getQuadDeleteDataFromRequestBody(deleteEnrichedBody);
 
     await updateProcess(
       resourceUri,

@@ -6,7 +6,8 @@ import { processContext } from '../context';
 import isUrl from '../util/is-url';
 import isEmail from '../util/is-email';
 import isMaxLength from '../util/is-max-length';
-import { EnrichedBody } from '../types';
+import { EnrichedBody, EnrichedBodyOptions } from '../types';
+import { diagramsToContext, linksToContext } from '../util/transform-context';
 
 export function getSessionUriFromRequest(request: Request): string {
   const HEADER_MU_SESSION_ID = 'mu-session-id';
@@ -58,14 +59,23 @@ export function errorOnResourceUriMissingInRequest(request: Request): string {
   return uri;
 }
 
-export function enrichRequestBodyWithContext(request: Request): EnrichedBody {
+export function enrichRequestBodyWithContext(
+  request: Request,
+  options: EnrichedBodyOptions,
+): EnrichedBody {
   const enrichedBody = request.body;
-  if (!enrichedBody['@context']) {
-    enrichedBody['@context'] = processContext;
+  if (enrichedBody['@context']) {
+    return enrichedBody;
   }
-  if (!enrichedBody['type']) {
-    enrichedBody['type'] = 'Process';
-  }
+
+  enrichedBody['@context'] = processContext;
+  enrichedBody['type'] = 'Process';
+  enrichedBody['diagrams'] = diagramsToContext(
+    request.body['diagrams'],
+    options.versionNumberForDiagramList,
+  );
+  enrichedBody['links'] = linksToContext(request.body['links']);
+
   return enrichedBody;
 }
 
@@ -74,8 +84,6 @@ const processResourceKeys = () => {
     value && typeof value === 'string' && value.trim() !== '';
   const valueIsArrayOfUris = (value: unknown) =>
     Array.isArray(value) && value.every((uri: string) => isUrl(uri));
-  const valueIsArrayOfSingleUri = (value: unknown) =>
-    Array.isArray(value) && value.length === 1 && isUrl(value[0]);
 
   const processKeys = {
     title: {
@@ -99,11 +107,19 @@ const processResourceKeys = () => {
         value === null || (valueIsStringAndNotEmpty(value) && isUrl(value)),
       requiredValueAsString: 'null or an uri',
     },
+    'linked-blueprints': {
+      validate: (value: Array<string>) => valueIsArrayOfUris(value),
+      requiredValueAsString: 'an array of uris',
+    },
     diagrams: {
-      validate: (value: Array<string>) => valueIsArrayOfSingleUri(value),
-      requiredValueAsString: 'an array with a single uri',
+      validate: (value: Array<string>) => valueIsArrayOfUris(value),
+      requiredValueAsString: 'an array of uris',
     },
     attachments: {
+      validate: (value: Array<string>) => valueIsArrayOfUris(value),
+      requiredValueAsString: 'an array of uris',
+    },
+    links: {
       validate: (value: Array<string>) => valueIsArrayOfUris(value),
       requiredValueAsString: 'an array of uris',
     },
