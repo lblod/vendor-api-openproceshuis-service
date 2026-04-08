@@ -90,7 +90,6 @@ processRouter.patch('/', async (req: Request, res: Response) => {
 
   await updateProcess(
     resourceUri,
-    vendorUri,
     requestInsertDataTriples,
     requestDeleteDataTriples,
   );
@@ -128,7 +127,6 @@ processRouter.put('/', async (req: Request, res: Response) => {
 
   await updateProcess(
     resourceUri,
-    vendorUri,
     requestInsertDataTriples,
     requestDeleteDataTriples,
   );
