@@ -8,6 +8,7 @@ import { processRouter } from './router/process';
 import { impersonateRouter } from './router/impersonate';
 import { HttpError } from './util/http-error';
 import { pino } from './util/logger';
+import { createError } from './controller/error';
 
 app.use(pino);
 app.use(
@@ -27,8 +28,14 @@ app.get('/health-check', (req: Request, res: Response) => {
   res.send({ status: 'ok' });
 });
 
-const errorHandler: ErrorRequestHandler = function (err, _req, res, _next) {
+const errorHandler: ErrorRequestHandler = async function (
+  err,
+  _req,
+  res,
+  _next,
+) {
   const errorResponse = HttpError.caughtErrorJsonResponse(err);
+  await createError(errorResponse.title, errorResponse.description);
   res.status(errorResponse.status);
   res.json({
     errors: [errorResponse],
