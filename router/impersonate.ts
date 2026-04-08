@@ -9,6 +9,7 @@ import {
 } from '../controller/impersonate';
 import { authenticateBeforeAction } from '../controller/auth';
 import { sparqlEscapeUri } from 'mu';
+import { createError } from '../controller/error';
 
 export const impersonateRouter = Router();
 
@@ -28,6 +29,7 @@ impersonateRouter.post('/', async (req: Request, res: Response) => {
     return res.status(201).send();
   } catch (error) {
     const errorResponse = HttpError.caughtErrorJsonResponse(error);
+    await createError(errorResponse.title, errorResponse.description);
     return res.status(errorResponse.status).send(errorResponse);
   }
 });

@@ -29,6 +29,7 @@ import {
   validateRequestBodyAgainstExpandedLd,
 } from '../controller/context';
 import { EnrichedBody } from '../types';
+import { createError } from '../controller/error';
 
 export const processRouter = Router();
 
@@ -61,6 +62,7 @@ processRouter.post('/', async (req: Request, res: Response) => {
     return res.status(201).send({ '@id': processUri });
   } catch (error) {
     const errorResponse = HttpError.caughtErrorJsonResponse(error);
+    await createError(errorResponse.title, errorResponse.description);
     return res.status(errorResponse.status).send(errorResponse);
   }
 });
@@ -104,6 +106,7 @@ processRouter.patch('/', async (req: Request, res: Response) => {
     return res.status(200).send();
   } catch (error) {
     const errorResponse = HttpError.caughtErrorJsonResponse(error);
+    await createError(errorResponse.title, errorResponse.description);
     return res.status(errorResponse.status).send(errorResponse);
   }
 });
@@ -147,6 +150,7 @@ processRouter.put('/', async (req: Request, res: Response) => {
     return res.status(200).send();
   } catch (error) {
     const errorResponse = HttpError.caughtErrorJsonResponse(error);
+    await createError(errorResponse.title, errorResponse.description);
     return res.status(errorResponse.status).send(errorResponse);
   }
 });
@@ -164,6 +168,7 @@ processRouter.delete('/', async (req: Request, res: Response) => {
     return res.status(204).send();
   } catch (error) {
     const errorResponse = HttpError.caughtErrorJsonResponse(error);
+    await createError(errorResponse.title, errorResponse.description);
     return res.status(errorResponse.status).send(errorResponse);
   }
 });
@@ -189,6 +194,7 @@ processRouter.delete('/files', async (req: Request, res: Response) => {
     return res.status(204).send();
   } catch (error) {
     const errorResponse = HttpError.caughtErrorJsonResponse(error);
+    await createError(errorResponse.title, errorResponse.description);
     return res.status(errorResponse.status).send(errorResponse);
   }
 });

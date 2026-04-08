@@ -12,14 +12,16 @@ const ERROR_RESOURCE_TYPE_URI =
 const ERROR_GRAPH_URI =
   process.env.ERROR_GRAPH || 'http://mu.semte.ch/graphs/errors';
 const ERROR_CREATOR_URI =
-  process.env.ERROR_CREATOR || 'http://lblod.data.gift/services/vendor-api';
+  process.env.ERROR_CREATOR || 'http://lblod.data.gift/services/oph/vendor-api';
 const ERROR_URI_PREFIX =
   process.env.ERROR_URI_PREFIX ||
   'http://lblod.data.gift/vocabularies/openproceshuis/error/';
 
-export async function createError(errorMsg: string) {
+export async function createError(errorMsg: string, stacktrace: unknown) {
   const id = uuid();
-  const uri = ERROR_URI_PREFIX + id;
+  const escapedUri = sparqlEscapeUri(ERROR_URI_PREFIX + id);
+  const now = new Date();
+  const msgWithTime = `[${now.toISOString()}] ${errorMsg}`;
 
   await update(
     `
@@ -30,15 +32,15 @@ export async function createError(errorMsg: string) {
 
     INSERT DATA {
       GRAPH ${sparqlEscapeUri(ERROR_GRAPH_URI)} {
-        ${sparqlEscapeUri(uri)} a ${sparqlEscapeUri(ERROR_RESOURCE_TYPE_URI)} ;
-          mu:uuid ${sparqlEscapeString(id)} ;
-          dct:created ${sparqlEscapeDateTime(new Date())} ;
-          dct:creator ${sparqlEscapeUri(ERROR_CREATOR_URI)} ;
-          dct:subject ${sparqlEscapeString('Vendor API')} ;
-          oslc:message ${sparqlEscapeString(errorMsg)} .
+        ${escapedUri} a ${sparqlEscapeUri(ERROR_RESOURCE_TYPE_URI)} .
+        ${escapedUri} mu:uuid ${sparqlEscapeString(id)} .
+        ${escapedUri} dct:created ${sparqlEscapeDateTime(now)} .
+        ${escapedUri} dct:creator ${sparqlEscapeUri(ERROR_CREATOR_URI)} .
+        ${escapedUri} dct:subject ${sparqlEscapeString('Vendor API')} .
+        ${escapedUri} oslc:message ${sparqlEscapeString(msgWithTime)} .
+        ${stacktrace ? `${escapedUri} oslc:largePreview  ${sparqlEscapeString(stacktrace)} .` : ''}
       }
     }
   `,
-    { sudo: true },
   );
 }
