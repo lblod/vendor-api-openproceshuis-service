@@ -8,7 +8,7 @@ import { processRouter } from './router/process';
 import { impersonateRouter } from './router/impersonate';
 import { HttpError } from './util/http-error';
 import { pino } from './util/logger';
-import { createError } from './controller/error';
+import { handleErrorForMonitoring } from './controller/error';
 
 app.use(pino);
 app.use(
@@ -35,7 +35,11 @@ const errorHandler: ErrorRequestHandler = async function (
   _next,
 ) {
   const errorResponse = HttpError.caughtErrorJsonResponse(err);
-  await createError(errorResponse.title, errorResponse.description);
+  await handleErrorForMonitoring(
+    errorResponse.status,
+    errorResponse.title,
+    errorResponse.description,
+  );
   res.status(errorResponse.status);
   res.json({
     errors: [errorResponse],

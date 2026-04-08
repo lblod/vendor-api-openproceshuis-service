@@ -17,7 +17,19 @@ const ERROR_URI_PREFIX =
   process.env.ERROR_URI_PREFIX ||
   'http://lblod.data.gift/vocabularies/openproceshuis/error/';
 
-export async function createError(errorMsg: string, stacktrace: unknown) {
+export async function handleErrorForMonitoring(
+  statusCode: number,
+  errorMsg: string,
+  stacktrace: unknown,
+) {
+  if (statusCode >= 400 && statusCode < 500) {
+    return;
+  }
+
+  await createError(errorMsg, stacktrace);
+}
+
+async function createError(errorMsg: string, stacktrace: unknown) {
   const id = uuid();
   const escapedUri = sparqlEscapeUri(ERROR_URI_PREFIX + id);
   const now = new Date();
