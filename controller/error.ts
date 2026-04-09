@@ -22,6 +22,7 @@ const ERROR_GRACE_PERIOD_IN_MINUTES =
   process.env.ERROR_GRACE_PERIOD_IN_MINUTES || 5;
 const ERROR_THRESHOLD_OCCURRENCES =
   parseInt(process.env.ERROR_THRESHOLD_OCCURRENCES) || 2;
+const SEND_MAIL_ON_THRESHOLD = process.env.SEND_MAIL_ON_THRESHOLD || false;
 
 export async function handleErrorForMonitoring(
   statusCode: number,
@@ -65,7 +66,7 @@ async function createError(
   const now = new Date();
 
   let typeToTriggerDelta = '';
-  if (triggerEmailSend) {
+  if (triggerEmailSend && SEND_MAIL_ON_THRESHOLD === 'true') {
     typeToTriggerDelta = `, ${sparqlEscapeUri(ERROR_RESOURCE_TYPE_URI)}`;
   }
   await update(
