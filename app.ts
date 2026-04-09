@@ -34,12 +34,13 @@ const errorHandler: ErrorRequestHandler = async function (
   res,
   _next,
 ) {
-  const errorResponse = HttpError.caughtErrorJsonResponse(err);
   await handleErrorForMonitoring(
-    errorResponse.status,
-    errorResponse.title,
-    errorResponse.description,
+    err.status ?? 500,
+    err.message ?? 'An unexpected error occurred.',
+    err.description,
+    err.stack ?? err.object,
   );
+  const errorResponse = HttpError.caughtErrorJsonResponse(err);
   res.status(errorResponse.status);
   res.json({
     errors: [errorResponse],
