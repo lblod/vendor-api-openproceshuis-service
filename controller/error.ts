@@ -25,41 +25,44 @@ const ERROR_THRESHOLD_OCCURRENCES =
 
 export async function handleErrorForMonitoring(
   statusCode: number,
-  errorMsg: string,
-  stacktrace: unknown,
+  title: string,
+  description?: string,
+  detail?: unknown,
 ) {
   if (statusCode >= 400 && statusCode < 500) {
     return;
   }
 
   let triggerMail = false;
-  let message = errorMsg;
-  const countInLastMinutes = await errorCountInLastMinutes(errorMsg);
+  let message = description ?? '';
+  const countInLastMinutes = await errorCountInLastMinutes(title);
   if (countInLastMinutes >= ERROR_THRESHOLD_OCCURRENCES) {
-    const isMailSendInGracePeriod =
-      await wasMailTriggeredInGracePeriod(errorMsg);
-    const triggersInfo = `(was triggered ${countInLastMinutes} time(s) in last ${ERROR_GRACE_PERIOD_IN_MINUTES} minutes)`;
-    message = `${errorMsg} ${triggersInfo}`;
+    const isMailSendInGracePeriod = await wasMailTriggeredInGracePeriod(title);
+    const triggersInfo = `This error was triggered ${countInLastMinutes} time(s) in last ${ERROR_GRACE_PERIOD_IN_MINUTES} minute(s).`;
+    message += `\n\n ${triggersInfo}`;
     triggerMail = !isMailSendInGracePeriod;
   }
 
-  log.info(message, {
+  log.info('Creating an error resource', {
     statusCode,
-    stackTrace: stacktrace,
+    title,
+    description: message,
+    detail: detail,
     mailSend: triggerMail,
   });
-  await createError(message, stacktrace, triggerMail);
+  await createError(title, message, detail, triggerMail);
 }
 
 async function createError(
-  errorMsg: string,
-  stacktrace: unknown,
+  title: string,
+  message: string,
+  detail: unknown,
   triggerEmailSend = false,
 ) {
   const id = uuid();
-  const escapedUri = sparqlEscapeUri(ERROR_URI_PREFIX + id);
+  const uri = ERROR_URI_PREFIX + id;
+  const escapedUri = sparqlEscapeUri(uri);
   const now = new Date();
-  const msgWithTime = `[${now.toISOString()}] ${errorMsg}`;
 
   let typeToTriggerDelta = '';
   if (triggerEmailSend) {
@@ -79,9 +82,10 @@ async function createError(
         ${escapedUri} mu:uuid ${sparqlEscapeString(id)} .
         ${escapedUri} dct:created ${sparqlEscapeDateTime(now)} .
         ${escapedUri} dct:creator ${sparqlEscapeUri(ERROR_CREATOR_URI)} .
-        ${escapedUri} dct:subject ${sparqlEscapeString('Vendor API')} .
-        ${escapedUri} oslc:message ${sparqlEscapeString(msgWithTime)} .
-        ${stacktrace ? `${escapedUri} oslc:largePreview  ${sparqlEscapeString(stacktrace)} .` : ''}
+        ${escapedUri} dct:subject ${sparqlEscapeString(title)} .
+        ${escapedUri} oslc:message ${sparqlEscapeString(message)} .
+        ${escapedUri} dct:references ${sparqlEscapeUri(uri)} .
+        ${detail ? `${escapedUri} oslc:largePreview  ${sparqlEscapeString(detail)} .` : ''}
       }
     }
   `,
@@ -89,12 +93,11 @@ async function createError(
   );
 }
 
-async function errorCountInLastMinutes(errorMsg: string) {
+async function errorCountInLastMinutes(subject: string) {
   const sparqlResult = await query(
     `
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
     PREFIX dct: <http://purl.org/dc/terms/>
-    PREFIX oslc: <http://open-services.net/ns/core#>
     PREFIX oph: <http://lblod.data.gift/vocabularies/openproceshuis/>
 
     SELECT (COUNT(DISTINCT(?error)) AS ?count)
@@ -102,9 +105,9 @@ async function errorCountInLastMinutes(errorMsg: string) {
       GRAPH ${sparqlEscapeUri(ERROR_GRAPH_URI)} {
         ?error a oph:Error .
         ?error dct:created ?created .
-        ?error oslc:message ?message .
+        ?error dct:subject ?message .
         FILTER(
-          CONTAINS(str(?message), ${sparqlEscapeString(errorMsg)}) &&
+          CONTAINS(str(?message), ${sparqlEscapeString(subject)}) &&
           STR(?created) > STR(bif:dateadd('minute', -${ERROR_GRACE_PERIOD_IN_MINUTES}, now()))
         )
       }
@@ -116,21 +119,20 @@ async function errorCountInLastMinutes(errorMsg: string) {
   return parseInt(sparqlResult.results?.bindings?.[0]?.count.value) ?? 0;
 }
 
-async function wasMailTriggeredInGracePeriod(errorMsg: string) {
+async function wasMailTriggeredInGracePeriod(subject: string) {
   const sparqlResult = await query(
     `
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
     PREFIX dct: <http://purl.org/dc/terms/>
-    PREFIX oslc: <http://open-services.net/ns/core#>
     PREFIX oph: <http://lblod.data.gift/vocabularies/openproceshuis/>
 
     ASK {
       GRAPH ${sparqlEscapeUri(ERROR_GRAPH_URI)} {
         ?error a ${sparqlEscapeUri(ERROR_RESOURCE_TYPE_URI)} .
         ?error dct:created ?created .
-        ?error oslc:message ?message .
+        ?error dct:subject ?subject .
         FILTER(
-          CONTAINS(str(?message), ${sparqlEscapeString(errorMsg)}) &&
+          CONTAINS(str(?subject), ${sparqlEscapeString(subject)}) &&
           STR(NOW()) < STR(bif:dateadd('minute', ${ERROR_GRACE_PERIOD_IN_MINUTES}, ?created))
         )
       }
