@@ -18,6 +18,10 @@ const ERROR_CREATOR_URI =
 const ERROR_URI_PREFIX =
   process.env.ERROR_URI_PREFIX ||
   'http://lblod.data.gift/vocabularies/openproceshuis/error/';
+const ERROR_GRACE_PERIOD_IN_MINUTES =
+  process.env.ERROR_GRACE_PERIOD_IN_MINUTES || 5;
+const ERROR_THRESHOLD_OCCURRENCES =
+  parseInt(process.env.ERROR_THRESHOLD_OCCURRENCES) || 2;
 
 export async function handleErrorForMonitoring(
   statusCode: number,
@@ -28,20 +32,13 @@ export async function handleErrorForMonitoring(
     return;
   }
 
-  const gracePeriodInMinutes = 2;
-  const thresholdOccurrences = 5;
   let triggerMail = false;
   let message = errorMsg;
-  const countInLastMinutes = await errorCountInLastMinutes(
-    errorMsg,
-    gracePeriodInMinutes,
-  );
-  if (countInLastMinutes >= thresholdOccurrences) {
-    const isMailSendInGracePeriod = await wasMailTriggeredInGracePeriod(
-      errorMsg,
-      gracePeriodInMinutes,
-    );
-    const triggersInfo = `(was triggered ${countInLastMinutes} time(s) in last ${gracePeriodInMinutes} minutes)`;
+  const countInLastMinutes = await errorCountInLastMinutes(errorMsg);
+  if (countInLastMinutes >= ERROR_THRESHOLD_OCCURRENCES) {
+    const isMailSendInGracePeriod =
+      await wasMailTriggeredInGracePeriod(errorMsg);
+    const triggersInfo = `(was triggered ${countInLastMinutes} time(s) in last ${ERROR_GRACE_PERIOD_IN_MINUTES} minutes)`;
     message = `${errorMsg} ${triggersInfo}`;
     triggerMail = !isMailSendInGracePeriod;
   }
@@ -92,7 +89,7 @@ async function createError(
   );
 }
 
-async function errorCountInLastMinutes(errorMsg: string, minutes: number) {
+async function errorCountInLastMinutes(errorMsg: string) {
   const sparqlResult = await query(
     `
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
@@ -108,7 +105,7 @@ async function errorCountInLastMinutes(errorMsg: string, minutes: number) {
         ?error oslc:message ?message .
         FILTER(
           CONTAINS(str(?message), ${sparqlEscapeString(errorMsg)}) &&
-          STR(?created) > STR(bif:dateadd('minute', -${minutes}, now()))
+          STR(?created) > STR(bif:dateadd('minute', -${ERROR_GRACE_PERIOD_IN_MINUTES}, now()))
         )
       }
     }  
@@ -119,10 +116,7 @@ async function errorCountInLastMinutes(errorMsg: string, minutes: number) {
   return parseInt(sparqlResult.results?.bindings?.[0]?.count.value) ?? 0;
 }
 
-async function wasMailTriggeredInGracePeriod(
-  errorMsg: string,
-  minutes: number,
-) {
+async function wasMailTriggeredInGracePeriod(errorMsg: string) {
   const sparqlResult = await query(
     `
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
@@ -137,7 +131,7 @@ async function wasMailTriggeredInGracePeriod(
         ?error oslc:message ?message .
         FILTER(
           CONTAINS(str(?message), ${sparqlEscapeString(errorMsg)}) &&
-          STR(NOW()) < STR(bif:dateadd('minute', ${minutes}, ?created))
+          STR(NOW()) < STR(bif:dateadd('minute', ${ERROR_GRACE_PERIOD_IN_MINUTES}, ?created))
         )
       }
     }  
