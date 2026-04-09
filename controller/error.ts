@@ -30,26 +30,27 @@ export async function handleErrorForMonitoring(
 
   const gracePeriodInMinutes = 2;
   const thresholdOccurrences = 5;
-  const countInLastMinutes = await errorCountDuringGracePeriod(
+  let triggerMail = false;
+  let message = errorMsg;
+  const countInLastMinutes = await errorCountInLastMinutes(
     errorMsg,
     gracePeriodInMinutes,
   );
-  log.info(
-    `Error was triggered ${countInLastMinutes} time(s) in last ${gracePeriodInMinutes} minutes`,
-    {
-      statusCode,
-      message: errorMsg,
-      stackTrace: stacktrace,
-    },
-  );
-  let triggerMail = false;
-  let message = errorMsg;
   if (countInLastMinutes >= thresholdOccurrences) {
-    triggerMail = true;
+    const isMailSendInGracePeriod = await wasMailTriggeredInGracePeriod(
+      errorMsg,
+      gracePeriodInMinutes,
+    );
     const triggersInfo = `(was triggered ${countInLastMinutes} time(s) in last ${gracePeriodInMinutes} minutes)`;
     message = `${errorMsg} ${triggersInfo}`;
+    triggerMail = !isMailSendInGracePeriod;
   }
 
+  log.info(message, {
+    statusCode,
+    stackTrace: stacktrace,
+    mailSend: triggerMail,
+  });
   await createError(message, stacktrace, triggerMail);
 }
 
@@ -87,11 +88,13 @@ async function createError(
       }
     }
   `,
+    { sudo: true },
   );
 }
 
-async function errorCountDuringGracePeriod(errorMsg: string, minutes: number) {
-  const sparqlResult = await query(`
+async function errorCountInLastMinutes(errorMsg: string, minutes: number) {
+  const sparqlResult = await query(
+    `
     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
     PREFIX dct: <http://purl.org/dc/terms/>
     PREFIX oslc: <http://open-services.net/ns/core#>
@@ -109,7 +112,38 @@ async function errorCountDuringGracePeriod(errorMsg: string, minutes: number) {
         )
       }
     }  
-  `);
+  `,
+    { sudo: true },
+  );
 
   return parseInt(sparqlResult.results?.bindings?.[0]?.count.value) ?? 0;
+}
+
+async function wasMailTriggeredInGracePeriod(
+  errorMsg: string,
+  minutes: number,
+) {
+  const sparqlResult = await query(
+    `
+    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#>
+    PREFIX dct: <http://purl.org/dc/terms/>
+    PREFIX oslc: <http://open-services.net/ns/core#>
+    PREFIX oph: <http://lblod.data.gift/vocabularies/openproceshuis/>
+
+    ASK {
+      GRAPH ${sparqlEscapeUri(ERROR_GRAPH_URI)} {
+        ?error a ${sparqlEscapeUri(ERROR_RESOURCE_TYPE_URI)} .
+        ?error dct:created ?created .
+        ?error oslc:message ?message .
+        FILTER(
+          CONTAINS(str(?message), ${sparqlEscapeString(errorMsg)}) &&
+          STR(NOW()) < STR(bif:dateadd('minute', ${minutes}, ?created))
+        )
+      }
+    }  
+  `,
+    { sudo: true },
+  );
+
+  return Boolean(sparqlResult.boolean) ?? false;
 }
