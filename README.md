@@ -16,13 +16,15 @@ This JSON-ld api enables vendors to fully manage their process lifecycle within 
 
 Errors are created with resource type `oph:Error`. Depending on the threshold an grace period the extra `ERROR_RESOURCE_TYPE_URI` type is added to the resource object. When the class is added this can then trigger a delta message to interact with other services.
 
-| Environment variable          | Values        | Default value                            | Explanation                                                                                                           |
-| ----------------------------- | ------------- | ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| ERROR_RESOURCE_TYPE_URI       | URI as string | "http://open-services.net/ns/core#Error" | Type uri of the error resource. This uri can be used to trigger delta events.                                         |
-| ERROR_GRAPH_URI               | URI as string | "http://mu.semte.ch/graphs/errors"       | Single graph URI where the error resources will be stored.                                                            |
-| ERROR_GRACE_PERIOD_IN_MINUTES | Number        | 5                                        | Time window where errors need to occur, in combination with the threshold environment.                                |
-| ERROR_THRESHOLD_OCCURRENCES   | Number        | 2                                        | Amount of errors that need to be triggered in the grace period to add the resource type uri to the error.             |
-| SEND_MAIL_ON_THRESHOLD        | true / false  | false                                    | If previous threshold and/or grace period are set this environment will override adding the error resource class uri. |
+| Environment variable          | Values        | Default value                                               | Explanation                                                                                                            |
+| ----------------------------- | ------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
+| ERROR_RESOURCE_TYPE_URI       | URI as string | "http://open-services.net/ns/core#Error"                    | Type uri of the error resource. This uri can be used to trigger delta events.                                          |
+| ERROR_GRAPH_URI               | URI as string | "http://mu.semte.ch/graphs/errors"                          | Single graph URI where the error resources will be stored.                                                             |
+| ERROR_GRACE_PERIOD_IN_MINUTES | Number        | 5                                                           | Time window where errors need to occur, in combination with the threshold environment.                                 |
+| ERROR_THRESHOLD_OCCURRENCES   | Number        | 2                                                           | Amount of errors that need to be triggered in the grace period to add the resource type uri to the error.              |
+| SEND_MAIL_ON_THRESHOLD        | true / false  | false                                                       | If previous threshold and/or grace period are set this environment will override adding the error resource class uri.  |
+| ERROR_CREATOR_URI             | URI as string | "http://lblod.data.gift/services/oph/vendor-api"            | URI that will be set on the error resource as creator. In this usecase we want to know its from our vendor-api-service |
+| ERROR_URI_PREFIX              | URI as string | "http://lblod.data.gift/vocabularies/openproceshuis/error/" | The base uri that will be used when creating the error resources.                                                      |
 
 1. Update the environments of the service in your compose file
 
