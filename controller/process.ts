@@ -52,7 +52,6 @@ export async function createNewProcess(
 
 export async function updateProcess(
   processUri: string,
-  vendorUri: string,
   requestInsertDataTriples: string,
   requestDeleteDataTriples: { delete: string; where: string },
 ): Promise<void> {

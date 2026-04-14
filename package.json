@@ -10,7 +10,7 @@
     "@types/jsonld": "^1.5.15",
     "@types/node": "^20.19.25",
     "@typescript-eslint/eslint-plugin": "^6.13.2",
-    "baseline-browser-mapping": "^2.9.14",
+    "baseline-browser-mapping": "^2.10.16",
     "eslint": "^8.23.1",
     "eslint-config-prettier": "^8.5.0",
     "eslint-plugin-prettier": "^5.0.0",

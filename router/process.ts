@@ -33,162 +33,135 @@ import { EnrichedBody } from '../types';
 export const processRouter = Router();
 
 processRouter.post('/', async (req: Request, res: Response) => {
-  try {
-    const { bestuursEenheid, sessionUri } = await authenticateBeforeAction(req);
+  const { bestuursEenheid, sessionUri } = await authenticateBeforeAction(req);
 
-    errorOnCustomContextInRequest(req);
-    const resourceUri = errorOnResourceUriMissingInRequest(req);
-    validatePostProcessRequestBody(req);
+  errorOnCustomContextInRequest(req);
+  const resourceUri = errorOnResourceUriMissingInRequest(req);
+  validatePostProcessRequestBody(req);
 
-    const enrichedBody = enrichRequestBodyWithContext(req, {
-      versionNumberForDiagramList: 0,
-    });
-    const expandedLd = await getExpandedRequestBody(enrichedBody);
+  const enrichedBody = enrichRequestBodyWithContext(req, {
+    versionNumberForDiagramList: 0,
+  });
+  const expandedLd = await getExpandedRequestBody(enrichedBody);
 
-    await validateRequestBodyAgainstExpandedLd(expandedLd);
+  await validateRequestBodyAgainstExpandedLd(expandedLd);
 
-    const requestInsertDataTriples =
-      await getQuadInsertDataFromRequestBody(enrichedBody);
+  const requestInsertDataTriples =
+    await getQuadInsertDataFromRequestBody(enrichedBody);
 
-    const vendorUri = await getVendorUriFromSession(sessionUri);
-    const processUri = await createNewProcess(
-      resourceUri,
-      bestuursEenheid,
-      vendorUri,
-      requestInsertDataTriples,
-    );
+  const vendorUri = await getVendorUriFromSession(sessionUri);
+  const processUri = await createNewProcess(
+    resourceUri,
+    bestuursEenheid,
+    vendorUri,
+    requestInsertDataTriples,
+  );
 
-    return res.status(201).send({ '@id': processUri });
-  } catch (error) {
-    const errorResponse = HttpError.caughtErrorJsonResponse(error);
-    return res.status(errorResponse.status).send(errorResponse);
-  }
+  return res.status(201).send({ '@id': processUri });
 });
 
 processRouter.patch('/', async (req: Request, res: Response) => {
-  try {
-    const { sessionUri } = await authenticateBeforeAction(req);
+  const { sessionUri } = await authenticateBeforeAction(req);
 
-    errorOnCustomContextInRequest(req);
-    const resourceUri = errorOnResourceUriMissingInRequest(req);
-    const vendorUri = await getVendorUriFromSession(sessionUri);
-    await errorOnProcessNotOwnedByVendor(resourceUri, vendorUri);
+  errorOnCustomContextInRequest(req);
+  const resourceUri = errorOnResourceUriMissingInRequest(req);
+  const vendorUri = await getVendorUriFromSession(sessionUri);
+  await errorOnProcessNotOwnedByVendor(resourceUri, vendorUri);
 
-    validatePatchProcessRequestBody(req);
+  validatePatchProcessRequestBody(req);
 
-    const currentDiagramListCount =
-      await countOfCurrentDiagramListsOnProcess(resourceUri);
-    const enrichedBody = enrichRequestBodyWithContext(req, {
-      versionNumberForDiagramList: currentDiagramListCount + 1,
-    });
-    const expandedLd = await getExpandedRequestBody(enrichedBody);
+  const currentDiagramListCount =
+    await countOfCurrentDiagramListsOnProcess(resourceUri);
+  const enrichedBody = enrichRequestBodyWithContext(req, {
+    versionNumberForDiagramList: currentDiagramListCount + 1,
+  });
+  const expandedLd = await getExpandedRequestBody(enrichedBody);
 
-    await validateRequestBodyAgainstExpandedLd(expandedLd);
+  await validateRequestBodyAgainstExpandedLd(expandedLd);
 
-    const requestInsertDataTriples =
-      await getQuadInsertDataFromRequestBody(enrichedBody);
+  const requestInsertDataTriples =
+    await getQuadInsertDataFromRequestBody(enrichedBody);
 
-    const deleteEnrichedBody = {} as EnrichedBody;
-    Object.assign(deleteEnrichedBody, enrichedBody);
-    delete deleteEnrichedBody['diagrams'];
-    const requestDeleteDataTriples =
-      await getQuadDeleteDataFromRequestBody(deleteEnrichedBody);
+  const deleteEnrichedBody = {} as EnrichedBody;
+  Object.assign(deleteEnrichedBody, enrichedBody);
+  delete deleteEnrichedBody['diagrams'];
+  const requestDeleteDataTriples =
+    await getQuadDeleteDataFromRequestBody(deleteEnrichedBody);
 
-    await updateProcess(
-      resourceUri,
-      vendorUri,
-      requestInsertDataTriples,
-      requestDeleteDataTriples,
-    );
+  await updateProcess(
+    resourceUri,
+    requestInsertDataTriples,
+    requestDeleteDataTriples,
+  );
 
-    return res.status(200).send();
-  } catch (error) {
-    const errorResponse = HttpError.caughtErrorJsonResponse(error);
-    return res.status(errorResponse.status).send(errorResponse);
-  }
+  return res.status(200).send();
 });
 
 processRouter.put('/', async (req: Request, res: Response) => {
-  try {
-    const { sessionUri } = await authenticateBeforeAction(req);
+  const { sessionUri } = await authenticateBeforeAction(req);
 
-    errorOnCustomContextInRequest(req);
-    const resourceUri = errorOnResourceUriMissingInRequest(req);
-    const vendorUri = await getVendorUriFromSession(sessionUri);
-    await errorOnProcessNotOwnedByVendor(resourceUri, vendorUri);
+  errorOnCustomContextInRequest(req);
+  const resourceUri = errorOnResourceUriMissingInRequest(req);
+  const vendorUri = await getVendorUriFromSession(sessionUri);
+  await errorOnProcessNotOwnedByVendor(resourceUri, vendorUri);
 
-    validatePutProcessRequestBody(req);
+  validatePutProcessRequestBody(req);
 
-    const currentDiagramListCount =
-      await countOfCurrentDiagramListsOnProcess(resourceUri);
-    const enrichedBody = enrichRequestBodyWithContext(req, {
-      versionNumberForDiagramList: currentDiagramListCount + 1,
-    });
-    const expandedLd = await getExpandedRequestBody(enrichedBody);
+  const currentDiagramListCount =
+    await countOfCurrentDiagramListsOnProcess(resourceUri);
+  const enrichedBody = enrichRequestBodyWithContext(req, {
+    versionNumberForDiagramList: currentDiagramListCount + 1,
+  });
+  const expandedLd = await getExpandedRequestBody(enrichedBody);
 
-    await validateRequestBodyAgainstExpandedLd(expandedLd);
+  await validateRequestBodyAgainstExpandedLd(expandedLd);
 
-    const requestInsertDataTriples =
-      await getQuadInsertDataFromRequestBody(enrichedBody);
+  const requestInsertDataTriples =
+    await getQuadInsertDataFromRequestBody(enrichedBody);
 
-    const deleteEnrichedBody = {} as EnrichedBody;
-    Object.assign(deleteEnrichedBody, enrichedBody);
-    delete deleteEnrichedBody['diagrams'];
-    const requestDeleteDataTriples =
-      await getQuadDeleteDataFromRequestBody(deleteEnrichedBody);
+  const deleteEnrichedBody = {} as EnrichedBody;
+  Object.assign(deleteEnrichedBody, enrichedBody);
+  delete deleteEnrichedBody['diagrams'];
+  const requestDeleteDataTriples =
+    await getQuadDeleteDataFromRequestBody(deleteEnrichedBody);
 
-    await updateProcess(
-      resourceUri,
-      vendorUri,
-      requestInsertDataTriples,
-      requestDeleteDataTriples,
-    );
+  await updateProcess(
+    resourceUri,
+    requestInsertDataTriples,
+    requestDeleteDataTriples,
+  );
 
-    return res.status(200).send();
-  } catch (error) {
-    const errorResponse = HttpError.caughtErrorJsonResponse(error);
-    return res.status(errorResponse.status).send(errorResponse);
-  }
+  return res.status(200).send();
 });
 
 processRouter.delete('/', async (req: Request, res: Response) => {
-  try {
-    const { sessionUri } = await authenticateBeforeAction(req);
+  const { sessionUri } = await authenticateBeforeAction(req);
 
-    const resourceUri = errorOnResourceUriMissingInRequest(req);
-    const vendorUri = await getVendorUriFromSession(sessionUri);
-    await errorOnProcessNotOwnedByVendor(resourceUri, vendorUri);
+  const resourceUri = errorOnResourceUriMissingInRequest(req);
+  const vendorUri = await getVendorUriFromSession(sessionUri);
+  await errorOnProcessNotOwnedByVendor(resourceUri, vendorUri);
 
-    await archiveProcess(resourceUri);
+  await archiveProcess(resourceUri);
 
-    return res.status(204).send();
-  } catch (error) {
-    const errorResponse = HttpError.caughtErrorJsonResponse(error);
-    return res.status(errorResponse.status).send(errorResponse);
-  }
+  return res.status(204).send();
 });
 
 processRouter.delete('/files', async (req: Request, res: Response) => {
-  try {
-    const { sessionUri } = await authenticateBeforeAction(req);
+  const { sessionUri } = await authenticateBeforeAction(req);
 
-    const resourceUri = errorOnResourceUriMissingInRequest(req);
-    const vendorUri = await getVendorUriFromSession(sessionUri);
-    await errorOnProcessNotOwnedByVendor(resourceUri, vendorUri);
+  const resourceUri = errorOnResourceUriMissingInRequest(req);
+  const vendorUri = await getVendorUriFromSession(sessionUri);
+  await errorOnProcessNotOwnedByVendor(resourceUri, vendorUri);
 
-    const fileUri = req.body['fileUri'];
-    if (!fileUri || fileUri.trim() == '' || !isUrl(fileUri)) {
-      throw new HttpError(
-        'Property "fileUri" is not set',
-        400,
-        'Property "fileUri" must be set when you want to remove a file from the process.',
-      );
-    }
-    await removeFileFromProcess(resourceUri, fileUri);
-
-    return res.status(204).send();
-  } catch (error) {
-    const errorResponse = HttpError.caughtErrorJsonResponse(error);
-    return res.status(errorResponse.status).send(errorResponse);
+  const fileUri = req.body['fileUri'];
+  if (!fileUri || fileUri.trim() == '' || !isUrl(fileUri)) {
+    throw new HttpError(
+      'Property "fileUri" is not set',
+      400,
+      'Property "fileUri" must be set when you want to remove a file from the process.',
+    );
   }
+  await removeFileFromProcess(resourceUri, fileUri);
+
+  return res.status(204).send();
 });

@@ -8,6 +8,7 @@ import { processRouter } from './router/process';
 import { impersonateRouter } from './router/impersonate';
 import { HttpError } from './util/http-error';
 import { pino } from './util/logger';
+import { handleErrorForMonitoring } from './controller/error';
 
 app.use(pino);
 app.use(
@@ -27,7 +28,18 @@ app.get('/health-check', (req: Request, res: Response) => {
   res.send({ status: 'ok' });
 });
 
-const errorHandler: ErrorRequestHandler = function (err, _req, res, _next) {
+const errorHandler: ErrorRequestHandler = async function (
+  err,
+  _req,
+  res,
+  _next,
+) {
+  await handleErrorForMonitoring(
+    err.status ?? 500,
+    err.message ?? 'An unexpected error occurred.',
+    err.description,
+    err.stack ?? err.object,
+  );
   const errorResponse = HttpError.caughtErrorJsonResponse(err);
   res.status(errorResponse.status);
   res.json({
