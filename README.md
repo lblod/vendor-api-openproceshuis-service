@@ -16,6 +16,8 @@ This JSON-ld api enables vendors to fully manage their process lifecycle within 
 
 Errors are created with resource type `oph:Error`. Depending on the threshold an grace period the extra `ERROR_RESOURCE_TYPE_URI` type is added to the resource object. When the class is added this can then trigger a delta message to interact with other services.
 
+> Error resources will only be created when the status code of the error was lower or equal than 400 and higher or equal than 500
+
 | Environment variable          | Values        | Default value                                               | Explanation                                                                                                            |
 | ----------------------------- | ------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
 | ERROR_RESOURCE_TYPE_URI       | URI as string | "http://open-services.net/ns/core#Error"                    | Type uri of the error resource. This uri can be used to trigger delta events.                                          |
