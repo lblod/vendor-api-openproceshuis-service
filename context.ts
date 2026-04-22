@@ -2,6 +2,8 @@ export const processContext = {
   '@version': 1.1,
   type: '@type',
   Process: 'https://w3id.org/dpv#Process',
+  '@base': 'http://data.lblod.info/processes/',
+  uuid: 'http://mu.semte.ch/vocabularies/core/uuid',
   title: {
     '@id': 'http://purl.org/dc/terms/title',
     '@type': 'http://www.w3.org/2001/XMLSchema#string',
@@ -11,7 +13,7 @@ export const processContext = {
     '@type': 'http://www.w3.org/2001/XMLSchema#string',
   },
   email: {
-    '@id': 'https://schema.org/email',
+    '@id': 'http://schema.org/email',
     '@type': 'http://www.w3.org/2001/XMLSchema#string',
   },
   created: {
@@ -47,28 +49,86 @@ export const processContext = {
     },
   },
   diagrams: {
-    '@reverse':
-      'http://www.semanticdesktop.org/ontologies/2007/01/19/nie#isPartOf',
-    '@container': '@set',
-    '@type': '@id',
+    '@id': 'http://schema.org/hasPart',
     '@context': {
-      FileDataObject:
-        'http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#FileDataObject',
+      type: '@type',
+      DiagramList: 'http://schema.org/ItemList',
+      '@base': 'http://data.lblod.info/diagram-lists/',
+      uuid: 'http://mu.semte.ch/vocabularies/core/uuid',
+      order: 'http://schema.org/itemListOrder',
+      version: {
+        '@id': 'http://schema.org/version',
+        '@type': 'http://www.w3.org/2001/XMLSchema#string',
+      },
+      created: {
+        '@id': 'http://purl.org/dc/terms/created',
+        '@type': 'http://www.w3.org/2001/XMLSchema#dateTime',
+      },
+      modified: {
+        '@id': 'http://purl.org/dc/terms/modified',
+        '@type': 'http://www.w3.org/2001/XMLSchema#dateTime',
+      },
+      'diagram-list-items': {
+        '@id': 'http://schema.org/itemListElement',
+        '@container': '@set',
+        '@context': {
+          type: '@type',
+          DiagramListItem: 'http://schema.org/ListItem',
+          '@base': 'http://data.lblod.info/diagram-list-items/',
+          uuid: 'http://mu.semte.ch/vocabularies/core/uuid',
+          position: {
+            '@id': 'http://schema.org/position',
+            '@type': 'http://www.w3.org/2001/XMLSchema#integer',
+          },
+          created: {
+            '@id': 'http://purl.org/dc/terms/created',
+            '@type': 'http://www.w3.org/2001/XMLSchema#dateTime',
+          },
+          modified: {
+            '@id': 'http://purl.org/dc/terms/modified',
+            '@type': 'http://www.w3.org/2001/XMLSchema#dateTime',
+          },
+          diagramFile: {
+            '@id': 'http://schema.org/item',
+            '@type': '@id',
+          },
+          'diagram-list-items': {
+            '@id': 'http://schema.org/itemListElement',
+            '@container': '@set',
+            '@context': {
+              type: '@type',
+              DiagramListItem: 'http://schema.org/ListItem',
+              '@base': 'http://data.lblod.info/diagram-list-items/',
+              position: {
+                '@id': 'http://schema.org/position',
+                '@type': 'http://www.w3.org/2001/XMLSchema#integer',
+              },
+              created: {
+                '@id': 'http://purl.org/dc/terms/created',
+                '@type': 'http://www.w3.org/2001/XMLSchema#dateTime',
+              },
+              modified: {
+                '@id': 'http://purl.org/dc/terms/modified',
+                '@type': 'http://www.w3.org/2001/XMLSchema#dateTime',
+              },
+              diagramFile: {
+                '@id': 'http://schema.org/item',
+                '@type': '@id',
+              },
+            },
+          },
+        },
+      },
     },
   },
   attachments: {
-    '@reverse':
-      'http://www.semanticdesktop.org/ontologies/2007/01/19/nie#isPartOf',
+    '@id': 'http://schema.org/associatedMedia',
     '@container': '@set',
     '@type': '@id',
     '@context': {
       FileDataObject:
         'http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#FileDataObject',
     },
-  },
-  'ipdc-products': {
-    '@reverse': 'http://purl.org/vocab/cpsv#follows',
-    '@container': '@set',
   },
   'relevant-administrative-units': {
     '@id':
@@ -86,7 +146,8 @@ export const processContext = {
     '@type': '@id',
     '@container': '@set',
     '@context': {
-      Concept: 'http://www.w3.org/2004/02/skos/core#Concept',
+      InformationAsset:
+        'http://lblod.data.gift/vocabularies/informationclassification/InformationAsset',
     },
   },
   'linked-blueprints': {
@@ -107,11 +168,25 @@ export const processContext = {
   },
   links: {
     '@id': 'http://www.w3.org/2000/01/rdf-schema#seeAlso',
-    '@type': '@id',
     '@container': '@set',
     '@context': {
+      type: '@type',
       Bookmark:
         'http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#Bookmark',
+      '@base': 'http://data.lblod.info/links/',
+      uuid: 'http://mu.semte.ch/vocabularies/core/uuid',
+      label: {
+        '@id': 'http://www.w3.org/2004/02/skos/core#prefLabel',
+        '@type': 'http://www.w3.org/2001/XMLSchema#string',
+      },
+      href: {
+        '@id': 'http://www.semanticdesktop.org/ontologies/2007/01/19/nie#links',
+        '@type': 'http://www.w3.org/2001/XMLSchema#string',
+      },
+      modified: {
+        '@id': 'http://purl.org/dc/terms/modified',
+        '@type': 'http://www.w3.org/2001/XMLSchema#dateTime',
+      },
     },
   },
 };

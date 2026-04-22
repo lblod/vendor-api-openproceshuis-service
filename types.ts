@@ -10,3 +10,7 @@ export type EnrichedBody = {
   '@context': any;
   [key: string]: null | string | number | Array<string>;
 };
+
+export type EnrichedBodyOptions = {
+  versionNumberForDiagramList?: number;
+};

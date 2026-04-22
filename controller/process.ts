@@ -27,6 +27,7 @@ export async function createNewProcess(
     `
     PREFIX dct: <http://purl.org/dc/terms/>
     PREFIX mu: <http://mu.semte.ch/vocabularies/core/>
+
     INSERT DATA {
       ${requestInsertDataTriples}
       ${sparqlEscapeUri(processUri)} mu:uuid ${sparqlEscapeString(uuid())}.
@@ -51,7 +52,6 @@ export async function createNewProcess(
 
 export async function updateProcess(
   processUri: string,
-  vendorUri: string,
   requestInsertDataTriples: string,
   requestDeleteDataTriples: { delete: string; where: string },
 ): Promise<void> {
@@ -71,8 +71,7 @@ export async function updateProcess(
     }
     WHERE {
       GRAPH ?g {
-        VALUES ?process { ${sparqlEscapeUri(processUri)} }
-        ?process a dpv:Process .
+        ${sparqlEscapeUri(processUri)} a dpv:Process .
         ${requestDeleteDataTriples.where}
       }
     }  
@@ -94,8 +93,7 @@ export async function updateProcess(
     }
     WHERE {
       GRAPH ?g {
-        VALUES ?process { ${sparqlEscapeUri(processUri)} }
-        ?process a dpv:Process .
+        ${sparqlEscapeUri(processUri)} a dpv:Process .
       }
     }  
   `,
@@ -157,14 +155,25 @@ export async function removeFileFromProcess(
 ): Promise<void> {
   const sparqlResult = await query(
     `
-    PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
-    ASK {
-      ${sparqlEscapeUri(fileUri)} nie:isPartOf ?process .
-    }  
+    PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
+    PREFIX schema: <http://schema.org/>
+    SELECT ?process 
+    WHERE {
+      ${sparqlEscapeUri(fileUri)} a nfo:FileDataObject .
+
+      OPTIONAL {
+        ?process schema:associatedMedia ${sparqlEscapeUri(fileUri)} .
+      }
+      OPTIONAL {
+        ?process schema:hasPart / schema:itemListElement / schema:item ${sparqlEscapeUri(fileUri)} .
+      }
+    } LIMIT 1
   `,
     { sudo: false },
   );
-  const fileExistsOnProcess = Boolean(sparqlResult.boolean);
+  const fileExistsOnProcess = Boolean(
+    sparqlResult.results.bindings?.[0]?.process?.value,
+  );
   if (!fileExistsOnProcess) {
     throw new HttpError(
       'Could not find file on process.',
@@ -172,27 +181,33 @@ export async function removeFileFromProcess(
       `The file ${sparqlEscapeUri(fileUri)} was not found on process ${sparqlEscapeUri(processUri)}.`,
     );
   }
-
+  const archivedStatusUri =
+    'http://lblod.data.gift/concepts/concept-status/gearchiveerd';
   await updateQueryWithCatch(
     `
-    PREFIX nie: <http://www.semanticdesktop.org/ontologies/2007/01/19/nie#>
-    PREFIX dpv: <https://w3id.org/dpv#>
+    PREFIX nfo: <http://www.semanticdesktop.org/ontologies/2007/03/22/nfo#>
+    PREFIX adms: <http://www.w3.org/ns/adms#>
     DELETE {
-      ${sparqlEscapeUri(fileUri)} nie:isPartOf ?process .
+      ${sparqlEscapeUri(fileUri)} adms:status ?status .
+    }
+    INSERT {
+      ${sparqlEscapeUri(fileUri)} adms:status ${sparqlEscapeUri(archivedStatusUri)} .
     }
     WHERE {
-      VALUES ?process { ${sparqlEscapeUri(processUri)} }
-      ?process a dpv:Process .
+      ${sparqlEscapeUri(fileUri)} a nfo:FileDataObject .
+      OPTIONAL {
+        ${sparqlEscapeUri(fileUri)} adms:status ?status .
+      }
     }  
   `,
     { sudo: false },
     'Sparql query for removing file from process resource failed.',
     {
-      process: process['@id'],
+      process: processUri,
       file: fileUri,
     },
   );
-  log.info('Removed file from process', {
+  log.info('Archived file on process process', {
     process: processUri,
     file: fileUri,
   });
@@ -239,5 +254,38 @@ export async function errorOnProcessNotOwnedByVendor(
       403,
       `The process ${processUri} is not owned by ${vendorUri} and so you cannot edit this resource.`,
     );
+  }
+}
+
+export async function countOfCurrentDiagramListsOnProcess(
+  processUri: string,
+): Promise<number> {
+  try {
+    const sparqlResult = await query(
+      `
+    PREFIX dpv: <https://w3id.org/dpv#>
+    PREFIX schema: <http://schema.org/>
+
+    SELECT (COUNT(DISTINCT ?diagramList) as ?count)
+    WHERE {
+      ${sparqlEscapeUri(processUri)} a dpv:Process .
+      ${sparqlEscapeUri(processUri)} schema:hasPart ?diagramList .
+    }  
+  `,
+      { sudo: true },
+    );
+
+    const count = sparqlResult.results?.bindings?.[0]?.count?.value;
+
+    return parseInt(count) ?? 0;
+  } catch (error) {
+    log.info(
+      'Could not fetch current diagram list count for process. Returning 0',
+      {
+        process: processUri,
+      },
+    );
+
+    return 0;
   }
 }
