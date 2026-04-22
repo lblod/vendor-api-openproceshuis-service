@@ -1,3 +1,11 @@
+# V0.0.5
+
+#### :rocket: Enhancement
+
+* [#14](https://github.com/lblod/vendor-api-openproceshuis-service/pull/14) OPH-993 | Monitoring/fallback of service by [@JonasVanHoof](https://github.com/JonasVanHoof)
+* [#13](https://github.com/lblod/vendor-api-openproceshuis-service/pull/13) OPH-907 | when removing a file from a process this means archiving the file by [@JonasVanHoof](https://github.com/JonasVanHoof) 
+* [#11](https://github.com/lblod/vendor-api-openproceshuis-service/pull/11) OPH-907 | Support subprocesses with context by [@JonasVanHoof](https://github.com/JonasVanHoof)
+
 # V0.0.4
 
 #### :rocket: Enhancement
