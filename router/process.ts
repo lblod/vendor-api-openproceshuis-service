@@ -29,6 +29,7 @@ import {
   validateRequestBodyAgainstExpandedLd,
 } from '../controller/context';
 import { EnrichedBody } from '../types';
+import { versionCurrentProcessWithUri } from '../controller/process-versioning';
 
 export const processRouter = Router();
 
@@ -56,6 +57,8 @@ processRouter.post('/', async (req: Request, res: Response) => {
     vendorUri,
     requestInsertDataTriples,
   );
+
+  await versionCurrentProcessWithUri(processUri);
 
   return res.status(201).send({ '@id': processUri });
 });
@@ -94,6 +97,8 @@ processRouter.patch('/', async (req: Request, res: Response) => {
     requestDeleteDataTriples,
   );
 
+  await versionCurrentProcessWithUri(resourceUri);
+
   return res.status(200).send();
 });
 
@@ -131,6 +136,8 @@ processRouter.put('/', async (req: Request, res: Response) => {
     requestDeleteDataTriples,
   );
 
+  await versionCurrentProcessWithUri(resourceUri);
+
   return res.status(200).send();
 });
 
@@ -142,6 +149,8 @@ processRouter.delete('/', async (req: Request, res: Response) => {
   await errorOnProcessNotOwnedByVendor(resourceUri, vendorUri);
 
   await archiveProcess(resourceUri);
+
+  await versionCurrentProcessWithUri(resourceUri);
 
   return res.status(204).send();
 });
@@ -162,6 +171,8 @@ processRouter.delete('/files', async (req: Request, res: Response) => {
     );
   }
   await removeFileFromProcess(resourceUri, fileUri);
+
+  await versionCurrentProcessWithUri(resourceUri);
 
   return res.status(204).send();
 });
