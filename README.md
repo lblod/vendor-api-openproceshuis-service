@@ -12,11 +12,7 @@ This JSON-ld api enables vendors to fully manage their process lifecycle within 
 **Process** Process resources can be created and edited through this API. We do limit editing processes by only allowing editing processes that have been created by this service.
 **File** The file uris used for building up the process resource originate from the file-service
 
-# Errors
-
-Errors are created with resource type `oph:Error`. Depending on the threshold an grace period the extra `ERROR_RESOURCE_TYPE_URI` type is added to the resource object. When the class is added this can then trigger a delta message to interact with other services.
-
-> Error resources will only be created when the status code of the error was lower or equal than 400 and higher or equal than 500
+# Environment variables
 
 | Environment variable          | Values        | Default value                                               | Explanation                                                                                                            |
 | ----------------------------- | ------------- | ----------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
@@ -27,6 +23,13 @@ Errors are created with resource type `oph:Error`. Depending on the threshold an
 | SEND_MAIL_ON_THRESHOLD        | true / false  | false                                                       | If previous threshold and/or grace period are set this environment will override adding the error resource class uri.  |
 | ERROR_CREATOR_URI             | URI as string | "http://lblod.data.gift/services/oph/vendor-api"            | URI that will be set on the error resource as creator. In this usecase we want to know its from our vendor-api-service |
 | ERROR_URI_PREFIX              | URI as string | "http://lblod.data.gift/vocabularies/openproceshuis/error/" | The base uri that will be used when creating the error resources.                                                      |
+| VERSION_PROCESSES             | true / false  | false                                                       | To enable or disable the creation of process versions                                                                  |
+
+# Errors
+
+Errors are created with resource type `oph:Error`. Depending on the threshold an grace period the extra `ERROR_RESOURCE_TYPE_URI` type is added to the resource object. When the class is added this can then trigger a delta message to interact with other services.
+
+> Error resources will only be created when the status code of the error was lower or equal than 400 and higher or equal than 500
 
 1. Update the environments of the service in your compose file
 
