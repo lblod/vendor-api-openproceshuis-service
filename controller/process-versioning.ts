@@ -1,7 +1,17 @@
 import { query, sparqlEscapeString, sparqlEscapeUri, uuid } from 'mu';
 import { updateQueryWithCatch } from '../util/sparql-with-try-catch';
 import { log } from '../util/logger';
+
+export const VERSION_PROCESSES = process.env.VERSION_PROCESSES || false;
+
 export async function versionCurrentProcessWithUri(processUri: string) {
+  if (VERSION_PROCESSES !== 'true') {
+    log.debug('Versioning of processes is disabled', {
+      VERSION_PROCESSES: VERSION_PROCESSES,
+    });
+    return;
+  }
+
   const latestVersionUri = await fetchLatestVersionForProcessUri(processUri);
   const newVersionId = uuid();
   const newVersionUri = `http://data.lblod.info/processes/versions/${newVersionId}`;
