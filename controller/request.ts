@@ -83,7 +83,14 @@ const processResourceKeys = () => {
   const valueIsStringAndNotEmpty = (value: unknown) =>
     value && typeof value === 'string' && value.trim() !== '';
   const valueIsArrayOfUris = (value: unknown) =>
-    Array.isArray(value) && value.every((uri: string) => isUrl(uri));
+    Array.isArray(value) && value.every((uri: string) => typeof uri === 'string' && isUrl(uri));
+  const valueIsArrayDiagramValues = (value: unknown) =>
+    Array.isArray(value) &&
+    value.every(
+      (diagramObject: { fileUri: string; position: number }) =>
+        isUrl(diagramObject.fileUri) &&
+        typeof diagramObject.position === 'number',
+    );
 
   const processKeys = {
     title: {
@@ -112,8 +119,10 @@ const processResourceKeys = () => {
       requiredValueAsString: 'an array of uris',
     },
     diagrams: {
-      validate: (value: Array<string>) => valueIsArrayOfUris(value),
-      requiredValueAsString: 'an array of uris',
+      validate: (value: Array<string>) =>
+        valueIsArrayOfUris(value) || valueIsArrayDiagramValues(value),
+      requiredValueAsString:
+        'an array of uris or array of objects with "fileUri" and "position" of the file',
     },
     attachments: {
       validate: (value: Array<string>) => valueIsArrayOfUris(value),
@@ -175,7 +184,7 @@ export function validatePostProcessRequestBody(request: Request) {
     throw new HttpError(
       'Property "diagrams" is required in the body.',
       400,
-      'Provide the "diagrams" property as an array with a single uri in the body.',
+      'Provide the "diagrams" property as an array of uri\'s OR as an array of objects with "fileUri" and "position" of the file in the body.',
     );
   }
 }
